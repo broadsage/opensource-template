@@ -21,7 +21,7 @@ Need help? We're here to support you! This document outlines the various ways yo
 - **📖 [Documentation](docs/)** - Comprehensive guides and references
 - **💡 [Examples](examples/)** - Code examples and use cases
 - **🔧 [Troubleshooting Guide](docs/troubleshooting.md)** - Common issues and solutions
-- **📝 [FAQ](#frequently-asked-questions)** - Frequently asked questions
+- **📝 [FAQ](#-frequently-asked-questions)** - Frequently asked questions
 
 ## 🤝 Getting Support
 

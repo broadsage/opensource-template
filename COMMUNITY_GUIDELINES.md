@@ -218,7 +218,7 @@ We regularly organize:
 
 ---
 
-*These guidelines are living documents that evolve with our community. Last updated: August 2025*
+### These guidelines are living documents that evolve with our community. Last updated: August 2025
 
 **Questions about these guidelines?** Start a discussion in our [community forum](https://github.com/broadsage/opensource-template/discussions).
 
