@@ -1,0 +1,94 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Broadsage <opensource@broadsage.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# CodeQL Configuration File
+# This file customizes the CodeQL analysis for enhanced security scanning
+
+name: "CodeQL Configuration"
+
+# Disable the default CodeQL query suite and use custom ones
+disable-default-queries: false
+
+# Specify additional query suites and queries
+queries:
+  - uses: security-extended
+  - uses: security-and-quality
+
+# Path filters - specify which paths to include/exclude from analysis
+paths-ignore:
+  # Ignore common directories that don't need analysis
+  - "/.github/"
+  - "/docs/"
+  - "/megalinter-reports/"
+  - "**/*.md"
+  - "**/*.txt"
+  - "**/*.yml"
+  - "**/*.yaml"
+  - "**/*.json"
+  - "**/LICENSE*"
+  - "**/*.toml"
+
+paths:
+  # Include source code directories
+  - "/scripts/"
+  - "/src/"
+  - "**/*.py"
+  - "**/*.js"
+  - "**/*.ts"
+  - "**/*.java"
+  - "**/*.cpp"
+  - "**/*.c"
+  - "**/*.cs"
+  - "**/*.go"
+  - "**/*.rb"
+  - "**/*.php"
+
+# Language-specific configurations
+python:
+  # Python-specific settings
+  setup-python-dependencies: true
+  python-executable: python3
+
+# Custom query pack configuration (for enterprise)
+# packs:
+#   python:
+#     - "codeql/python-queries@~0.0.0"
+#     - "codeql/python-all@~0.0.0"
+
+# Advanced configuration
+external-repository-token: ${{ github.token }}
+
+# Compilation settings for compiled languages
+compile:
+  # Custom build commands can be specified here
+  # These will override autobuild for specific languages
+
+  # Example for C/C++
+  # cpp:
+  #   - make clean
+  #   - make
+
+  # Example for Java
+  # java:
+  #   - mvn clean compile
+
+  # Example for C#
+  # csharp:
+  #   - dotnet build
+
+# Database settings
+database:
+  # Cleanup databases after analysis
+  cleanup-level: "none" # Options: none, light, aggressive
+
+  # Finalize databases
+  finalize-dataset: true
+
+# Analysis settings
+analysis:
+  # Threads for analysis (0 = auto-detect)
+  threads: 0
+
+  # Timeout in minutes
+  timeout: 120
