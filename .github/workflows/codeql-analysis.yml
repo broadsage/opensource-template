@@ -101,13 +101,8 @@ jobs:
         with:
           languages: ${{ matrix.language }}
 
-          # Query suites: Use security-extended for comprehensive security analysis
-          # Available options: security-extended, security-and-quality, default
-          queries: |
-            security-extended
-            +security-and-quality
-
-          # Custom configuration file (optional)
+          # Query suites are configured in the config file
+          # Custom configuration file
           config-file: ./.github/codeql/codeql-config.yml
 
           # Additional packs (optional - enterprise feature)

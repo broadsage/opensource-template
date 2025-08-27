@@ -12,15 +12,8 @@ disable-default-queries: false
 
 # Specify additional query suites and queries
 queries:
-  - name: security-extended
-    queries:
-      - uses: security-extended
-  - name: security-and-quality
-    queries:
-      - uses: security-and-quality
-  - name: custom-security
-    queries:
-      - uses: ./.github/codeql/custom-security-suite.qls
+  - uses: security-extended
+  - uses: security-and-quality
 
 # Path filters - specify which paths to include/exclude from analysis
 paths-ignore:
