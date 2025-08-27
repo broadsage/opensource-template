@@ -11,17 +11,18 @@ on:
   workflow_dispatch:
     # Allow manual triggering
   push:
-    branches: [main, develop]
+    branches: [main]
     paths:
       - ".github/workflows/update-contributors.yml"
 
-permissions:
-  contents: write
-  pull-requests: write
-
+permissions: read-all
+  
 jobs:
   update-contributors:
     runs-on: ubuntu-latest
+    permissions: 
+      contents: write
+      pull-requests: write
 
     steps:
       - name: Checkout repository
