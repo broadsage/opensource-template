@@ -1,0 +1,89 @@
+#
+# SPDX-FileCopyrightText: Copyright (c) 2025 Broadsage <opensource@broadsage.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+name: ❓ Question
+description: Ask a question about the project
+title: "[Question]: "
+labels: ["question", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your question! 🤔
+
+        Before asking, please:
+        - Check the documentation and FAQ
+        - Search existing issues and discussions
+        - Consider if this is a bug report or feature request instead
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Prerequisites
+      description: By submitting this issue, you agree to follow our Code of Conduct
+      options:
+        - label: I have read and agree to the [Code of Conduct](../CODE_OF_CONDUCT.md)
+          required: true
+        - label: I have searched the documentation and existing issues
+          required: true
+
+  - type: dropdown
+    id: question-type
+    attributes:
+      label: Question Type
+      description: What type of question is this?
+      options:
+        - Usage/How-to
+        - Configuration
+        - Integration
+        - Best Practices
+        - Architecture/Design
+        - Performance
+        - Troubleshooting
+        - Compatibility
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What would you like to know?
+      placeholder: "Please describe your question clearly and provide as much context as possible"
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Provide relevant context about your situation
+      placeholder: |
+        - What are you trying to accomplish?
+        - What have you tried so far?
+        - What environment are you working in?
+        - Any relevant configuration or code snippets
+
+  - type: textarea
+    id: research
+    attributes:
+      label: Research Done
+      description: What research have you already done?
+      placeholder: |
+        - Documentation sections checked
+        - Similar issues or discussions found
+        - External resources consulted
+        - Attempts made to solve the problem
+
+  - type: textarea
+    id: additional-info
+    attributes:
+      label: Additional Information
+      description: Any other information that might be helpful
+      placeholder: "Screenshots, logs, configuration files, etc."

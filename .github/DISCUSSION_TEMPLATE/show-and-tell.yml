@@ -1,0 +1,74 @@
+#
+# SPDX-FileCopyrightText: Copyright (c) 2025 Broadsage <opensource@broadsage.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: "🎉 [Show and Tell]: "
+labels: ["show-and-tell", "community"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Share your amazing work with the community! 🎉
+
+        Show and tell discussions are perfect for:
+        - Showcasing projects built with this tool
+        - Sharing creative solutions or workarounds
+        - Demonstrating integrations or extensions
+        - Celebrating community achievements
+
+  - type: textarea
+    id: what-you-built
+    attributes:
+      label: What Did You Build?
+      description: Tell us about your project or achievement
+      placeholder: "Describe what you created, achieved, or solved"
+    validations:
+      required: true
+
+  - type: textarea
+    id: how-it-works
+    attributes:
+      label: How It Works
+      description: Explain how your solution works
+      placeholder: "Technical details, architecture, key features, etc."
+
+  - type: textarea
+    id: technologies-used
+    attributes:
+      label: Technologies and Tools Used
+      description: What technologies, frameworks, or tools did you use?
+      placeholder: "List the main technologies, libraries, or tools in your solution"
+
+  - type: textarea
+    id: challenges-solved
+    attributes:
+      label: Challenges and Solutions
+      description: What challenges did you face and how did you solve them?
+      placeholder: "Interesting problems you encountered and how you overcame them"
+
+  - type: textarea
+    id: links-and-demos
+    attributes:
+      label: Links and Demos
+      description: Share links to your project, demo, repository, etc.
+      placeholder: |
+        - Repository: https://github.com/...
+        - Live demo: https://...
+        - Documentation: https://...
+        - Blog post: https://...
+
+  - type: textarea
+    id: lessons-learned
+    attributes:
+      label: Lessons Learned
+      description: What did you learn during this project?
+      placeholder: "Key insights, tips, or lessons that might help others"
+
+  - type: textarea
+    id: feedback-wanted
+    attributes:
+      label: Feedback Wanted
+      description: What kind of feedback are you looking for?
+      placeholder: "Are you looking for technical feedback, suggestions for improvement, or just want to share?"

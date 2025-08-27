@@ -3,6 +3,23 @@
 SPDX-FileCopyrightText: Copyright (c) 2025 Broadsage <opensource@broadsage.com>
 
 SPDX-License-Identifier: Apache-2.0
+
+🤝 Community & Contribution
+
+We believe in global collaboration and innovation. All contributions are welcome! Here's how you can get involved:
+
+### 🌟 Community Health Features
+
+- **🎯 Issue Templates**: Structured templates for bugs, features, questions, and documentation
+- **📝 Pull Request Templates**: Comprehensive PR guidelines and checklists
+- **💬 Discussion Templates**: Templates for ideas, polls, and show-and-tell
+- **🤖 Automated Workflows**: Welcome messages, triage, stale issue management, and contributor recognition
+- **🏆 Contributor Recognition**: [Hall of Fame](CONTRIBUTORS.md) and achievement system
+- **🛟 Comprehensive Support**: [Support Guide](SUPPORT.md) with multiple channels
+- **📋 Community Guidelines**: [Community Guidelines](COMMUNITY_GUIDELINES.md) for healthy collaboration
+
+### How to Contributeage.com>
+
 -->
 
 # Open Source Project Template

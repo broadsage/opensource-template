@@ -1,0 +1,20 @@
+#
+# SPDX-FileCopyrightText: Copyright (c) 2025 Broadsage <opensource@broadsage.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 GitHub Discussions
+    url: https://github.com/broadsage/opensource-template/discussions
+    about: Ask questions, share ideas, and connect with the community
+  - name: 🔒 Security Vulnerability
+    url: https://github.com/broadsage/opensource-template/security/advisories/new
+    about: Please report security vulnerabilities privately through GitHub Security Advisories
+  - name: 📧 Email Support
+    url: https://github.com/broadsage/opensource-template/discussions/categories/support
+    about: Contact maintainers for support or create a support discussion
+  - name: 🏢 LinkedIn
+    url: https://www.linkedin.com/company/broadsage
+    about: Follow us on LinkedIn for project updates and community news

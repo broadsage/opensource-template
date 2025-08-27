@@ -1,0 +1,72 @@
+#
+# SPDX-FileCopyrightText: Copyright (c) 2025 Broadsage <opensource@broadsage.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: "🗳️ [Poll]: "
+labels: ["poll", "community-input"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Community polls help us make decisions together! 🗳️
+
+        Use this template to create polls for community input on project decisions,
+        feature priorities, or other topics where community consensus is valuable.
+
+  - type: textarea
+    id: poll-question
+    attributes:
+      label: Poll Question
+      description: What question are you asking the community?
+      placeholder: "Clear, specific question for the community to vote on"
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context and Background
+      description: Provide context to help community members make informed decisions
+      placeholder: "Why is this poll needed? What background information is relevant?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: options
+    attributes:
+      label: Poll Options
+      description: List the available options (you can also use reaction emojis in the discussion)
+      placeholder: |
+        Option A: Description
+        Option B: Description
+        Option C: Description
+
+        Or use reaction emojis:
+        👍 for Yes
+        👎 for No
+        🤔 for Maybe/Unsure
+    validations:
+      required: true
+
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Decision Criteria
+      description: What factors should people consider when voting?
+      placeholder: "What criteria or considerations should influence the decision?"
+
+  - type: input
+    id: deadline
+    attributes:
+      label: Poll Deadline
+      description: When should voting close?
+      placeholder: "e.g., 2025-09-15 or 'one week from now'"
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact of Decision
+      description: How will the poll results be used?
+      placeholder: "How will this decision affect the project? Who will implement the results?"

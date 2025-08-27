@@ -50,7 +50,7 @@ To request a new feature:
 
 ## Contribute Code, Documentation, and More
 
-To contribute code, documentation, or other improvements:
+To contribute code, documentation, or other improvements, please follow these steps:
 
 1. Discuss your plans beforehand to ensure alignment with project goals.
 2. Check the list of open issues. Assign yourself an existing issue or create a new one.
@@ -107,9 +107,7 @@ git commit --signoff --gpg-sign -m "fix: add fix for the bug"
 
 ### Commit Standard
 
-- Use the [Conventional Commit standard](https://www.conventionalcommits.org).
-- Group relevant changes in commits.
-- Write clear, human-readable commit messages.
+- Follow the [Conventional Commit standard](https://www.conventionalcommits.org), including starting the commit message with an imperative verb (e.g., "feat:", "fix:", "chore:").
 
 ## Reporting Security Issues
 
