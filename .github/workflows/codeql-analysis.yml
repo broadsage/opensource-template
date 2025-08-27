@@ -116,19 +116,6 @@ jobs:
           # Thread count for analysis performance
           threads: 0 # Use all available threads
 
-      # Autobuild attempt (for compiled languages)
-      - name: Autobuild
-        if: matrix.language == 'c-cpp' || matrix.language == 'csharp' || matrix.language == 'java-kotlin' || matrix.language == 'go'
-        uses: github/codeql-action/autobuild@db69a5182d331d562e511302ae3c9aafd5fada6c # v3.26.6
-
-      # Manual build steps (if autobuild fails)
-      # Uncomment and customize based on your build requirements
-      # - name: Manual Build
-      #   if: matrix.language == 'c-cpp' || matrix.language == 'csharp' || matrix.language == 'java-kotlin'
-      #   run: |
-      #     echo "Manual build steps for ${{ matrix.language }}"
-      #     # Add your build commands here
-
       # Python-specific setup (if needed)
       - name: Set up Python
         if: matrix.language == 'python'
