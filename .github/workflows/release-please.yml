@@ -7,17 +7,31 @@ name: Release Please
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      # Standard semantic versioning (v1.0.0)
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      # Pre-release versions (v1.0.0-alpha.1, v1.0.0-beta.2, v1.0.0-rc.1)
+      - "v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
+      # Development and snapshot builds
+      - "v[0-9]+.[0-9]+.[0-9]+-dev.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-snapshot.[0-9]+"
+      # Build metadata (v1.0.0+build.1)
+      - 'v[0-9]+.[0-9]+.[0-9]+\+*'
+      # Combined pre-release and build metadata
+      - "v[0-9]+.[0-9]+.[0-9]+-*\\+*"
 
-permissions:
-  contents: write
-  issues: write
-  pull-requests: write
+permissions: read-all
 
 jobs:
   release-please:
+    name: Release Please Automation
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     steps:
       - name: Harden the runner (Audit all outbound calls)
         uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2.13.0
