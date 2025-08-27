@@ -7,24 +7,23 @@
 	@$(MAKE) help
 
 # Makefile to check Docker and Podman installation and provide help
-.PHONY: help check-docker check-podman check-containers check-compliance update-contributors show-stats
+.PHONY: help check-docker check-podman check-containers check-compliance update-contributors validate-codeql-setup
 
 help:
 	@echo "Usage: make <target>"
 	@echo ""
 	@echo "Targets:"
-	@echo "  help                 Show this help message with advanced details."
-	@echo "  check-docker         Check if Docker is installed and available in PATH."
-	@echo "  check-podman         Check if Podman is installed and available in PATH."
-	@echo "  check-containers     Check if both Docker and Podman are installed."
-	@echo "  check-compliance     Run code quality & compliance checks using MegaLinter, PublicCodeLint, FSFE REUSE Compliance, and Conform."
-	@echo "  update-contributors  Update dynamic statistics in CONTRIBUTORS.md file."
-	@echo "  show-stats           Display current contributor statistics."
+	@echo "  help                  Show this help message with advanced details."
+	@echo "  check-docker          Check if Docker is installed and available in PATH."
+	@echo "  check-podman          Check if Podman is installed and available in PATH."
+	@echo "  check-containers      Check if both Docker and Podman are installed."
+	@echo "  check-compliance      Run code quality & compliance checks using MegaLinter, PublicCodeLint, FSFE REUSE Compliance, and Conform."
+	@echo "  update-contributors   Update dynamic statistics in CONTRIBUTORS.md file."
+	@echo "  show-stats            Display current contributor statistics."
+	@echo "  validate-codeql-setup Validate CodeQL configuration and setup."
 	@echo ""
 	@echo "Advanced Usage:"
 	@echo "  make check-containers # Checks both Docker and Podman installed."
-	@echo "  make update-contributors # Updates contributor statistics automatically."
-	@echo "  make show-stats # Shows current statistics for manual reference."
 	@echo ""
 	@echo "Troubleshooting (OS-specific):"
 	@sh -c "\
@@ -76,5 +75,6 @@ update-contributors:
 	@echo "🔄 Updating contributor statistics..."
 	@python3 scripts/update-contributors.py
 
-show-stats:
-	@./scripts/show-stats.sh
+validate-codeql-setup:
+	@echo "🔍 Validating CodeQL setup..."
+	@bash scripts/validate-codeql-setup.sh

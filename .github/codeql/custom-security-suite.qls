@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Broadsage <opensource@broadsage.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Custom CodeQL Query Suite for Open Source Template Project
+# This suite includes security-focused queries for open source projects
+
+description: Security queries for open source template projects
+queries:
+  # Include standard security queries
+  - include:
+      kind: problem
+      suite: codeql/python-queries/Security
+      severity: error
+  
+  - include:
+      kind: problem  
+      suite: codeql/python-queries/Security
+      severity: warning
+
+  # Include custom queries
+  - query: custom-queries/hardcoded-credentials.ql
+
+  # Additional security categories
+  - include:
+      kind: problem
+      tags: security
+      severity: error
+  
+  - include:
+      kind: problem
+      tags: security
+      severity: warning
+
+  # Include maintainability issues that could affect security
+  - include:
+      kind: problem
+      tags: maintainability
+      severity: error
+
+# Apply filters
+filters:
+  # Exclude low-confidence results
+  - exclude:
+      precision: low
+  
+  # Focus on security-relevant issues
+  - include:
+      tags: security
+  
+  - include:
+      tags: external/cwe
