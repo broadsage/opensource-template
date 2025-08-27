@@ -14,10 +14,6 @@ on:
     - cron: "0 6 * * *"
   workflow_dispatch:
     inputs:
-      languages:
-        description: "Languages to analyze (comma-separated: python,javascript,typescript,java,cpp,csharp,go,ruby)"
-        required: false
-        default: "python"
       queries:
         description: "Query suite to run (security-extended, security-and-quality, or custom)"
         required: false
@@ -39,8 +35,8 @@ permissions:
 jobs:
   analyze:
     name: "CodeQL Analysis"
-    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
-    timeout-minutes: ${{ (matrix.language == 'swift' && 120) || 360 }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
 
     permissions:
       # Required for all workflows
@@ -52,25 +48,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Define languages for analysis
-        # CodeQL supports: c-cpp, csharp, go, java-kotlin, javascript-typescript, python, ruby, swift
+        # Python-only analysis
         language: ["python"]
-        # Override languages if manually triggered
-        include:
-          - language: "javascript-typescript"
-            if: github.event_name == 'workflow_dispatch' && contains(github.event.inputs.languages, 'javascript')
-          - language: "javascript-typescript"
-            if: github.event_name == 'workflow_dispatch' && contains(github.event.inputs.languages, 'typescript')
-          - language: "java-kotlin"
-            if: github.event_name == 'workflow_dispatch' && contains(github.event.inputs.languages, 'java')
-          - language: "c-cpp"
-            if: github.event_name == 'workflow_dispatch' && contains(github.event.inputs.languages, 'cpp')
-          - language: "csharp"
-            if: github.event_name == 'workflow_dispatch' && contains(github.event.inputs.languages, 'csharp')
-          - language: "go"
-            if: github.event_name == 'workflow_dispatch' && contains(github.event.inputs.languages, 'go')
-          - language: "ruby"
-            if: github.event_name == 'workflow_dispatch' && contains(github.event.inputs.languages, 'ruby')
 
     steps:
       # Security hardening
@@ -116,9 +95,8 @@ jobs:
           # Thread count for analysis performance
           threads: 0 # Use all available threads
 
-      # Python-specific setup (if needed)
+      # Python setup
       - name: Set up Python
-        if: matrix.language == 'python'
         uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5.1.1
         with:
           python-version: "3.x"
@@ -126,7 +104,6 @@ jobs:
 
       # Install Python dependencies (if requirements files exist)
       - name: Install Python dependencies
-        if: matrix.language == 'python'
         run: |
           if [ -f requirements.txt ]; then
             echo "Installing from requirements.txt"
@@ -143,22 +120,6 @@ jobs:
           if [ -f setup.py ]; then
             echo "Installing from setup.py"
             pip install -e .
-          fi
-
-      # Node.js setup (if needed for JavaScript/TypeScript)
-      - name: Set up Node.js
-        if: matrix.language == 'javascript-typescript'
-        uses: actions/setup-node@8f152de45cc393bb48ce5d89d36b731f54556e65 # v4.0.0
-        with:
-          node-version: "18"
-          cache: "npm"
-
-      # Install Node.js dependencies
-      - name: Install Node.js dependencies
-        if: matrix.language == 'javascript-typescript'
-        run: |
-          if [ -f package.json ]; then
-            npm ci
           fi
 
       # Perform CodeQL Analysis
