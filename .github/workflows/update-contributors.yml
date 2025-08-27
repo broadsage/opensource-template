@@ -16,11 +16,11 @@ on:
       - ".github/workflows/update-contributors.yml"
 
 permissions: read-all
-  
+
 jobs:
   update-contributors:
     runs-on: ubuntu-latest
-    permissions: 
+    permissions:
       contents: write
       pull-requests: write
 
