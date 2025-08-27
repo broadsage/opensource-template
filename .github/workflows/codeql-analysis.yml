@@ -131,15 +131,6 @@ jobs:
           # Wait for processing to complete
           wait-for-processing: true
 
-      # Upload SARIF for additional processing (optional)
-      - name: Upload SARIF results
-        if: always()
-        uses: github/codeql-action/upload-sarif@db69a5182d331d562e511302ae3c9aafd5fada6c # v3.26.6
-        with:
-          sarif_file: ${{ runner.temp }}/codeql_databases/reports/sarif-output.sarif
-          category: "codeql-${{ matrix.language }}"
-        continue-on-error: true
-
   # Summary job to provide overall status
   summary:
     name: "CodeQL Summary"
