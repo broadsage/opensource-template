@@ -80,7 +80,7 @@ lint() {
     -e MEGALINTER_CONFIG='config/mega-linter.yml' \
     -e DEFAULT_WORKSPACE=${MEGALINTER_DEF_WORKSPACE} \
     -e LOG_LEVEL=INFO \
-    ghcr.io/oxsecurity/megalinter-java:latest
+    ghcr.io/oxsecurity/megalinter-python:latest
   store_exit_code "$?" "Lint" "Lint check failed, see logs (std out and/or ./megalinter-reports) and fix problems." "Lint check passed."
   printf '\n'
 }

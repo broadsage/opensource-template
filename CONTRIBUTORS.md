@@ -60,18 +60,37 @@ New contributors who show great potential and enthusiasm.
 
 ## 📊 Contribution Statistics
 
+> Real-time statistics automatically updated from git history
+
 | Contributor Type | Count | Percentage |
 |------------------|-------|------------|
-| Code Contributors | 0 | 0% |
-| Documentation Contributors | 0 | 0% |
-| Bug Reporters | 0 | 0% |
-| Feature Requesters | 0 | 0% |
+| Code Contributors | 4 | 100% |
+| Documentation Contributors | 2 | 50% |
+| Bug Fixers | 3 | 75% |
+| Feature Contributors | 2 | 50% |
 | Community Helpers | 0 | 0% |
-| **Total Contributors** | **0** | **100%** |
+| **Total Contributors** | **4** | **100%** |
+
+### 📈 Dynamic Metrics
+
+- 🚀 **Total Commits**: 173
+- 👥 **Active Contributors (30 days)**: 4
+- 📅 **Last Activity**: 2025-08-27
+- 📆 **Project Started**: 2024
+
+> *Statistics last updated: August 27, 2025 (automatically generated)*
+
+### 🏆 Current Leaders
+
+1. **Jeh** - 80 commits
+2. **Jeh1928** - 72 commits  
+3. **dependabot[bot]** - 19 commits
 
 ## 🎉 Recent Contributors
 
-*No recent contributions yet. Be the first!*
+**4 contributors in the last 30 days** 🚀
+
+*Thank you for keeping the project active!*
 
 ## 🏅 Special Recognition
 
@@ -97,9 +116,25 @@ Contributors who bring groundbreaking ideas or solutions.
 
 ## 🎊 Monthly Highlights
 
-### August 2025
+### ### August 2025
 
-*No contributions yet this month.*
+📊 **This Month Statistics:**
+
+- 📈 Commits: 81
+- 👥 Active Contributors: 4
+- 📅 Last Activity: %Y->- (HEAD -> develop, origin/develop)
+
+🎯 **Project Progress:**
+
+- 🚀 Total Commits: 173
+- 👥 Total Contributors: 4
+- 📅 Project Started: %Y
+
+🏆 **Top Contributors:**
+
+- Jeh (80 commits)
+- Jeh1928 (72 commits)
+- dependabot[bot] (19 commits)
 
 ## 📋 How to Get Recognized
 
