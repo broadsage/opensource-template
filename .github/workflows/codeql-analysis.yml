@@ -121,9 +121,6 @@ jobs:
           # Thread count for analysis performance
           threads: 0 # Use all available threads
 
-          # RAM allocation (in MB)
-          ram: 0 # Use default allocation
-
       # Autobuild attempt (for compiled languages)
       - name: Autobuild
         if: matrix.language == 'c-cpp' || matrix.language == 'csharp' || matrix.language == 'java-kotlin' || matrix.language == 'go'

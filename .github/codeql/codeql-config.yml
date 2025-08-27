@@ -97,8 +97,5 @@ analysis:
   # Threads for analysis (0 = auto-detect)
   threads: 0
 
-  # RAM allocation in MB (0 = auto-detect)
-  ram: 0
-
   # Timeout in minutes
   timeout: 120
