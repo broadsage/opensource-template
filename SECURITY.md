@@ -4,11 +4,11 @@ SPDX-FileCopyrightText: Copyright (c) 2025 Broadsage <opensource@broadsage.com>
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# Security Policy for Broadsage
+# Security Policy & Release Process
 
 ## Overview
 
-At Broadsage, we are committed to ensuring the security and integrity of our open-source projects. We value the contributions of security researchers and the broader community in helping us identify and address vulnerabilities in our software. This document outlines our security disclosure and response policy to ensure we responsibly handle critical issues while maintaining transparency and protecting our users.
+We are committed to ensuring the security and integrity of our open-source projects. We value the contributions of security researchers and the broader community in helping us identify and address vulnerabilities in our software. This document outlines our security disclosure and response policy to ensure we responsibly handle critical issues while maintaining transparency and protecting our users.
 
 ## Supported Versions
 
