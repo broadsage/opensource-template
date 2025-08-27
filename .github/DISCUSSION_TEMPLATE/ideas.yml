@@ -1,0 +1,60 @@
+#
+# SPDX-FileCopyrightText: Copyright (c) 2025 Broadsage <opensource@broadsage.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: "💡 [Idea]: "
+labels: ["idea", "discussion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for sharing your idea! 💡
+
+        Ideas and suggestions from the community help drive the project forward.
+        Please provide as much detail as possible to help others understand and discuss your proposal.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Briefly describe your idea
+      placeholder: "A clear and concise description of your idea"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem-opportunity
+    attributes:
+      label: Problem or Opportunity
+      description: What problem does this solve or what opportunity does this create?
+      placeholder: "Describe the current situation and how your idea addresses it"
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution
+      description: How would you approach this? What would the solution look like?
+      placeholder: "Describe your proposed solution in detail"
+
+  - type: textarea
+    id: benefits
+    attributes:
+      label: Benefits
+      description: What are the expected benefits of implementing this idea?
+      placeholder: "List the benefits this would bring to users, developers, or the project"
+
+  - type: textarea
+    id: considerations
+    attributes:
+      label: Considerations
+      description: Any potential challenges, risks, or considerations?
+      placeholder: "Think about implementation challenges, potential downsides, or alternative approaches"
+
+  - type: textarea
+    id: community-input
+    attributes:
+      label: Community Input
+      description: What kind of feedback or input are you looking for from the community?
+      placeholder: "What specific aspects would you like the community to discuss or provide feedback on?"

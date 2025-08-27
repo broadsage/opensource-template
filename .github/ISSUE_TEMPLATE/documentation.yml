@@ -1,0 +1,89 @@
+#
+# SPDX-FileCopyrightText: Copyright (c) 2025 Broadsage <opensource@broadsage.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+name: 📚 Documentation
+description: Report an issue or suggest improvements to documentation
+title: "[Docs]: "
+labels: ["documentation", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping us improve our documentation! 📖
+
+        Good documentation is essential for project adoption and contributor onboarding.
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Prerequisites
+      description: By submitting this issue, you agree to follow our Code of Conduct
+      options:
+        - label: I have read and agree to the [Code of Conduct](../CODE_OF_CONDUCT.md)
+          required: true
+        - label: I have searched for existing documentation issues
+          required: true
+
+  - type: dropdown
+    id: documentation-type
+    attributes:
+      label: Documentation Type
+      description: What type of documentation issue is this?
+      options:
+        - Missing Documentation
+        - Incorrect/Outdated Information
+        - Unclear Instructions
+        - Broken Links
+        - Code Examples Issues
+        - API Documentation
+        - Installation Guide
+        - Configuration Guide
+        - Troubleshooting Guide
+        - Contributing Guidelines
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: page-url
+    attributes:
+      label: Page/Section URL or Path
+      description: What page or section of documentation is this about?
+      placeholder: "e.g., README.md, docs/installation.md, or URL"
+
+  - type: textarea
+    id: issue-description
+    attributes:
+      label: Issue Description
+      description: Describe the documentation issue clearly
+      placeholder: "What's wrong with the current documentation? What's missing or unclear?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested-improvement
+    attributes:
+      label: Suggested Improvement
+      description: How should the documentation be improved?
+      placeholder: "What changes would make this clearer? What information should be added?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: user-impact
+    attributes:
+      label: User Impact
+      description: How does this documentation issue affect users?
+      placeholder: "Who is affected? What problems does this cause for users?"
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any additional context, screenshots, or examples
+      placeholder: "Screenshots, links to related discussions, examples, etc."
