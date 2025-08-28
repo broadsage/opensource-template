@@ -66,15 +66,36 @@ jobs:
               # Create GPG agent configuration for unattended operation
               mkdir -p ~/.gnupg
               chmod 700 ~/.gnupg
-              echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
-              echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+              
+              # Create comprehensive GPG configuration for automated signing
+              cat > ~/.gnupg/gpg.conf << EOF
+              use-agent
+              pinentry-mode loopback
+              batch
+              yes
+              EOF
+              
+              cat > ~/.gnupg/gpg-agent.conf << EOF
+              pinentry-program /usr/bin/pinentry-curses
+              allow-loopback-pinentry
+              default-cache-ttl 28800
+              max-cache-ttl 86400
+              EOF
+              
               chmod 600 ~/.gnupg/gpg.conf ~/.gnupg/gpg-agent.conf
+              
+              # Start GPG agent
+              gpgconf --kill gpg-agent 2>/dev/null || true
+              gpg-agent --daemon --allow-preset-passphrase --max-cache-ttl 86400 >/dev/null 2>&1 || true
               
               # Import key with passphrase
               echo "${{ secrets.DEVEX_GITHUB_GPG_PRIVATE_KEY }}" | base64 -d | \
                 gpg --batch --yes --pinentry-mode loopback \
                     --passphrase "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" \
                     --import 2>/dev/null || echo "GPG import completed with warnings"
+              
+              # Trust the imported key automatically
+              echo "${{ secrets.DEVEX_GITHUB_GPG_KEY_ID }}:6:" | gpg --import-ownertrust 2>/dev/null || true
               
               # Configure Git to use GPG with passphrase
               echo "Configuring Git with GPG key ID: ${{ secrets.DEVEX_GITHUB_GPG_KEY_ID }}"
@@ -92,6 +113,7 @@ jobs:
               # Set environment variables for GPG signing
               echo "GPG_TTY=$(tty)" >> $GITHUB_ENV
               echo "GPG_KEY_ID=${{ secrets.DEVEX_GITHUB_GPG_KEY_ID }}" >> $GITHUB_ENV
+              echo "GPG_PASSPHRASE=${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" >> $GITHUB_ENV
               
             else
               echo "Using unprotected GPG key"
@@ -138,7 +160,6 @@ jobs:
               EXTRACTED_KEY=$(gpg --list-secret-keys --with-colons | grep "^sec" | cut -d: -f5 | head -1)
               if [ -n "$EXTRACTED_KEY" ]; then
                 echo "📝 Using extracted key ID: $EXTRACTED_KEY"
-                git config --local user.signingkey "$EXTRACTED_KEY"
                 FOUND_KEY="$EXTRACTED_KEY"
               else
                 echo "❌ No usable key found"
@@ -146,10 +167,20 @@ jobs:
               fi
             fi
             
+            # Always update Git configuration with the correct key format
+            if [ -n "$FOUND_KEY" ]; then
+              echo "🔧 Updating Git configuration with correct key format: $FOUND_KEY"
+              git config --local user.signingkey "$FOUND_KEY"
+              # Also set as environment variable for the commit step
+              echo "GPG_SIGNING_KEY=$FOUND_KEY" >> $GITHUB_ENV
+            fi
+            
             # Improved GPG key verification
             echo "Verifying GPG key import with key: $FOUND_KEY"
             if gpg --list-secret-keys --with-colons | grep -q "$FOUND_KEY"; then
               echo "✅ GPG key imported and verified successfully"
+              echo "Current Git GPG configuration:"
+              git config --local user.signingkey
               
               # Test signing capability with proper passphrase handling
               echo "Testing GPG signing capability with key: $FOUND_KEY"
@@ -195,22 +226,81 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Debug GPG configuration before commit
+        if: steps.verify-changed-files.outputs.changed == 'true'
+        run: |
+          echo "🔍 Debugging GPG configuration before creating commit..."
+          echo "Current Git configuration:"
+          git config --local user.name || echo "No user.name set"
+          git config --local user.email || echo "No user.email set"  
+          git config --local user.signingkey || echo "No signing key set"
+          git config --local commit.gpgsign || echo "GPG signing not enabled"
+          echo "Environment variables:"
+          echo "GPG_TTY: ${GPG_TTY:-not set}"
+          echo "GPG_KEY_ID: ${GPG_KEY_ID:-not set}"
+          echo "GPG_SIGNING_KEY: ${GPG_SIGNING_KEY:-not set}"
+          echo "Available GPG secret keys:"
+          gpg --list-secret-keys --keyid-format LONG || echo "No keys found"
+
+      - name: Commit changes with GPG signing
+        if: steps.verify-changed-files.outputs.changed == 'true'
+        env:
+          GPG_TTY: ${{ env.GPG_TTY }}
+          GPG_PASSPHRASE: ${{ env.GPG_PASSPHRASE }}
+          GPG_SIGNING_KEY: ${{ env.GPG_SIGNING_KEY }}
+        run: |
+          echo "📝 Creating GPG-signed commit..."
+          
+          # Ensure GPG agent is running and configured
+          export GPG_TTY=$(tty)
+          
+          # Ensure the correct signing key is configured
+          if [ -n "$GPG_SIGNING_KEY" ]; then
+            echo "🔧 Using detected signing key: $GPG_SIGNING_KEY"
+            git config --local user.signingkey "$GPG_SIGNING_KEY"
+          fi
+          
+          # Display current GPG configuration
+          echo "Current GPG configuration:"
+          git config --local user.signingkey
+          git config --local commit.gpgsign
+          
+          # Add changed files
+          git add CONTRIBUTORS.md
+          
+          # Create the commit with GPG signing
+          echo "Creating commit with GPG signing..."
+          git commit -m "docs(contributors): update dynamic statistics [automated]
+
+          - Updated contributor counts and percentages
+          - Refreshed monthly statistics
+          - Updated recent activity summary
+          
+          Generated by: ${{ github.workflow }} workflow
+          
+          Signed-off-by: devex-discovery <devex-discovery@broadsage.com>" --signoff
+          
+          echo "✅ Commit created successfully"
+          
+          # Verify the commit was signed
+          echo "🔍 Verifying commit signature..."
+          git log --show-signature -1 || echo "Could not verify signature"
+          
+          # Show commit details
+          echo "📋 Commit details:"
+          git log --oneline -1
+
       - name: Create Pull Request
         if: steps.verify-changed-files.outputs.changed == 'true'
         id: create-pr
         uses: peter-evans/create-pull-request@v6
+        env:
+          GPG_TTY: ${{ env.GPG_TTY }}
+          GPG_KEY_ID: ${{ env.GPG_KEY_ID }}
+          GPG_SIGNING_KEY: ${{ env.GPG_SIGNING_KEY }}
+          GPG_PASSPHRASE: ${{ env.GPG_PASSPHRASE }}
         with:
           token: ${{ steps.generate-token.outputs.token }}
-          commit-message: |
-            docs(contributors): update dynamic statistics [automated]
-            
-            - Updated contributor counts and percentages
-            - Refreshed monthly statistics
-            - Updated recent activity summary
-            
-            Generated by: ${{ github.workflow }} workflow
-            
-            Signed-off-by: devex-discovery <devex-discovery@broadsage.com>
           title: "📊 Update Contributors Statistics"
           body: |
             ## 📊 Automated Contributors Statistics Update
@@ -253,7 +343,6 @@ jobs:
           assignees: |
             ${{ github.actor }}
           draft: false
-          signoff: true
 
       - name: Trigger status checks
         if: steps.verify-changed-files.outputs.changed == 'true' && steps.create-pr.outputs.pull-request-number
