@@ -63,6 +63,7 @@ jobs:
 
       - name: Create Pull Request
         if: steps.verify-changed-files.outputs.changed == 'true'
+        id: create-pr
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
@@ -113,6 +114,20 @@ jobs:
             ${{ github.actor }}
           draft: false
 
+      - name: Trigger status checks
+        if: steps.verify-changed-files.outputs.changed == 'true' && steps.create-pr.outputs.pull-request-number
+        run: |
+          echo "PR created: #${{ steps.create-pr.outputs.pull-request-number }}"
+          echo "PR URL: ${{ steps.create-pr.outputs.pull-request-url }}"
+          
+          # If using PAT_TOKEN, trigger workflow runs on the PR branch
+          if [ -n "${{ secrets.PAT_TOKEN }}" ]; then
+            echo "Using PAT_TOKEN - status checks should trigger automatically"
+          else
+            echo "Using GITHUB_TOKEN - status checks may need to be triggered manually"
+            echo "Consider creating a PAT_TOKEN secret for automatic status check triggering"
+          fi
+
       - name: Create summary
         if: steps.verify-changed-files.outputs.changed == 'true'
         run: |
@@ -128,10 +143,17 @@ jobs:
             echo ""
             echo "### 📋 Next Steps:"
             echo "1. Review the created Pull Request"
-            echo "2. Verify the statistical updates are accurate"
-            echo "3. Merge the PR to apply the changes"
+            echo "2. Wait for status checks to complete"
+            echo "3. Verify the statistical updates are accurate"
+            echo "4. Merge the PR to apply the changes"
             echo ""
-            echo "🔗 **PR Link:** Will be available in the workflow summary"
+            if [ -n "${{ steps.create-pr.outputs.pull-request-number }}" ]; then
+              echo "🔗 **PR #${{ steps.create-pr.outputs.pull-request-number }}:** ${{ steps.create-pr.outputs.pull-request-url }}"
+            fi
+            echo ""
+            if [ -z "${{ secrets.PAT_TOKEN }}" ]; then
+              echo "⚠️ **Note:** Status checks may need manual triggering. Consider adding a PAT_TOKEN secret for automatic status check execution."
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: No changes summary
