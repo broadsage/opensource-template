@@ -21,7 +21,7 @@ jobs:
   update-contributors:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
 
     steps:
@@ -65,7 +65,7 @@ jobs:
         if: steps.verify-changed-files.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
           commit-message: |
             docs(contributors): update dynamic statistics [automated]
             
