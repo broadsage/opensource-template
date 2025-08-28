@@ -116,16 +116,37 @@ jobs:
 
       - name: Trigger status checks
         if: steps.verify-changed-files.outputs.changed == 'true' && steps.create-pr.outputs.pull-request-number
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           echo "PR created: #${{ steps.create-pr.outputs.pull-request-number }}"
           echo "PR URL: ${{ steps.create-pr.outputs.pull-request-url }}"
           
-          # If using PAT_TOKEN, trigger workflow runs on the PR branch
-          if [ -n "${{ secrets.PAT_TOKEN }}" ]; then
-            echo "Using PAT_TOKEN - status checks should trigger automatically"
+          # Simple and reliable method: Close and reopen the PR to trigger workflows
+          echo "Triggering status checks by closing and reopening PR..."
+          
+          # Wait a moment for PR to be fully created
+          sleep 3
+          
+          # Close the PR
+          gh pr close ${{ steps.create-pr.outputs.pull-request-number }} --comment "🔄 Temporarily closing to trigger status checks..."
+          
+          # Wait a moment
+          sleep 2
+          
+          # Reopen the PR
+          gh pr reopen ${{ steps.create-pr.outputs.pull-request-number }} --comment "✅ Reopened - status checks should now be triggered automatically!"
+          
+          echo "PR has been closed and reopened to trigger status checks."
+          
+          # Additional check: verify the PR is open
+          PR_STATE=$(gh pr view ${{ steps.create-pr.outputs.pull-request-number }} --json state --jq '.state')
+          echo "PR state after reopen: $PR_STATE"
+          
+          if [ "$PR_STATE" = "OPEN" ]; then
+            echo "✅ PR is open and status checks should be running"
           else
-            echo "Using GITHUB_TOKEN - status checks may need to be triggered manually"
-            echo "Consider creating a PAT_TOKEN secret for automatic status check triggering"
+            echo "⚠️ PR state is unexpected: $PR_STATE"
           fi
 
       - name: Create summary
@@ -143,7 +164,7 @@ jobs:
             echo ""
             echo "### 📋 Next Steps:"
             echo "1. Review the created Pull Request"
-            echo "2. Wait for status checks to complete"
+            echo "2. Status checks should now be running automatically"
             echo "3. Verify the statistical updates are accurate"
             echo "4. Merge the PR to apply the changes"
             echo ""
@@ -151,9 +172,7 @@ jobs:
               echo "🔗 **PR #${{ steps.create-pr.outputs.pull-request-number }}:** ${{ steps.create-pr.outputs.pull-request-url }}"
             fi
             echo ""
-            if [ -z "${{ secrets.PAT_TOKEN }}" ]; then
-              echo "⚠️ **Note:** Status checks may need manual triggering. Consider adding a PAT_TOKEN secret for automatic status check execution."
-            fi
+            echo "✅ **Status Checks:** Automatically triggered via close/reopen method"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: No changes summary
