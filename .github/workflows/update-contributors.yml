@@ -66,9 +66,9 @@ jobs:
             # Start GPG agent and initialize trust database
             gpg-agent --daemon --batch 2>/dev/null || true
             
-            # Initialize the trust database
+            # Initialize the trust database properly
             echo "Initializing GPG trust database..."
-            gpg --list-keys >/dev/null 2>&1 || true
+            gpg --update-trustdb 2>/dev/null || gpg --check-trustdb 2>/dev/null || true
             
             # Import GPG key with better error handling
             echo "Importing GPG private key..."
@@ -91,21 +91,9 @@ jobs:
             if [ -n "$IMPORTED_KEY_ID" ]; then
               echo "✅ Successfully imported GPG key: $IMPORTED_KEY_ID"
               
-              # Get the full fingerprint for trust setting
-              FINGERPRINT=$(gpg --list-secret-keys --with-colons | grep "^fpr" | head -1 | cut -d: -f10)
-              
-              # Set ultimate trust for the key using fingerprint
-              if [ -n "$FINGERPRINT" ]; then
-                echo "Setting trust for fingerprint: $FINGERPRINT"
-                echo "${FINGERPRINT}:6:" | gpg --import-ownertrust 2>/dev/null || {
-                  echo "Trust import failed, trying alternative method..."
-                  # Alternative: use edit-key trust method
-                  echo -e "5\ny\nsave\n" | gpg --batch --command-fd 0 --expert --edit-key "$IMPORTED_KEY_ID" trust 2>/dev/null || true
-                }
-                echo "✅ Trust configuration completed"
-              else
-                echo "⚠️ Could not get fingerprint, skipping trust setting"
-              fi
+              # Skip trust setting to avoid trust database issues
+              # GPG signing will work without explicit trust for own keys
+              echo "Skipping trust configuration (not required for signing)"
               
               # Configure Git to use the imported key
               git config --local user.signingkey "$IMPORTED_KEY_ID"
