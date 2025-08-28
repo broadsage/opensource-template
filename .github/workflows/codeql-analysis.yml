@@ -6,9 +6,14 @@ name: "CodeQL Advanced Security"
 
 on:
   push:
-    branches: ["main", "develop"]
+    branches:
+      - "main"
+      - "feature/**"
+      - "hotfix/**"
+      - "bugfix/**"
+      - "release/**"
   pull_request:
-    branches: ["main", "develop"]
+    branches: ["main"]
   schedule:
     # Run at 06:00 UTC every day (adjust timezone as needed)
     - cron: "0 6 * * *"
@@ -23,14 +28,7 @@ env:
   # Fail the workflow if CodeQL analysis fails
   CODEQL_FAIL_ON_ERROR: true
 
-permissions:
-  # Required for CodeQL analysis
-  security-events: write
-  # Required to fetch internal or private CodeQL packs
-  packages: read
-  # Required for GitHub Advanced Security features
-  actions: read
-  contents: read
+permissions: read-all
 
 jobs:
   analyze:

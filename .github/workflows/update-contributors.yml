@@ -21,7 +21,7 @@ jobs:
   update-contributors:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       pull-requests: write
 
     steps:
@@ -36,15 +36,18 @@ jobs:
           fetch-depth: 0 # Fetch full history for accurate statistics
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
       - name: Configure Git
         run: |
           git config --local user.email "opensource@broadsage.com"
           git config --local user.name "Contributors Bot"
 
       - name: Update contributor statistics
-        run: |
-          chmod +x scripts/update-contributors-stats.sh
-          ./scripts/update-contributors-stats.sh
+        run: python scripts/update-contributors.py
 
       - name: Check for changes
         id: verify-changed-files

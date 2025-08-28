@@ -71,9 +71,77 @@ detect_container_engine() {
   fi
 }
 
+# Check and start podman machine if needed
+check_podman_machine() {
+  if [[ "$CONTAINER_ENGINE" != "podman" ]]; then
+    return 0
+  fi
+
+  print_header 'PODMAN MACHINE STATUS CHECK'
+
+  # Function to check if podman machine is running
+  is_podman_running() {
+    # Try multiple methods to check if podman is running
+    # Method 1: Check via podman machine list
+    if podman machine list 2>/dev/null | grep -q "Currently running"; then
+      return 0
+    fi
+
+    # Method 2: Check via JSON format (fallback)
+    if podman machine list --format=json 2>/dev/null | grep -q '"Running":true'; then
+      return 0
+    fi
+
+    # Method 3: Try a simple podman command to test connectivity
+    if podman info >/dev/null 2>&1; then
+      return 0
+    fi
+
+    return 1
+  }
+
+  # Check if podman machine is running
+  if is_podman_running; then
+    printf '%b%s Podman machine is already running%b\n' "$GREEN" "$CHECKMARK" "$NC"
+    return 0
+  fi
+
+  printf '%b%s Podman machine is not running. Starting...%b\n' "$YELLOW" "$MISSING" "$NC"
+
+  # Try to start the default podman machine
+  if podman machine start; then
+    printf '%b%s Podman machine started successfully%b\n' "$GREEN" "$CHECKMARK" "$NC"
+
+    # Wait for the machine to be fully ready with incremental checks
+    printf 'Waiting for podman machine to be ready'
+    for _i in {1..10}; do # shellcheck disable=SC2034
+      printf '.'
+      sleep 2
+      if is_podman_running; then
+        printf '\n%b%s Podman machine is now running and ready%b\n' "$GREEN" "$CHECKMARK" "$NC"
+        return 0
+      fi
+    done
+
+    # If we get here, the machine didn't start properly within 20 seconds
+    printf '\n%b%s Podman machine startup timed out or failed verification%b\n' "$RED" "$MISSING" "$NC"
+    printf 'Machine appears to have started but may not be fully ready.\n'
+    printf 'Debug info - Machine list output:\n'
+    podman machine list || true
+    printf 'Attempting to continue anyway...\n'
+    return 0 # Continue execution instead of failing hard
+  else
+    printf '%b%s Failed to start podman machine%b\n' "$RED" "$MISSING" "$NC"
+    printf 'Please check your podman installation and machine configuration.\n'
+    printf 'You may need to run: podman machine init\n'
+    exit 1
+  fi
+}
+
 # Linting with MegaLinter
 lint() {
   detect_container_engine
+  check_podman_machine
   export MEGALINTER_DEF_WORKSPACE='/repo'
   print_header 'LINTER HEALTH (MEGALINTER)'
   "$CONTAINER_ENGINE" run --rm --volume "$(pwd)":/repo \
@@ -88,6 +156,7 @@ lint() {
 # Lint publiccode.yml
 publiccodelint() {
   detect_container_engine
+  check_podman_machine
   print_header 'LINTER publiccode.yml (publiccode.yml)'
   "$CONTAINER_ENGINE" run --rm -i italia/publiccode-parser-go -no-network /dev/stdin <publiccode.yml
   store_exit_code "$?" "publiccode.yml" "Lint of publiccode check failed, see logs and fix problems." "Lint check for publiccode.yml passed."
@@ -97,6 +166,7 @@ publiccodelint() {
 # License compliance with REUSE
 license() {
   detect_container_engine
+  check_podman_machine
   print_header 'LICENSE HEALTH (REUSE)'
   "$CONTAINER_ENGINE" run --rm --volume "$(pwd)":/data docker.io/fsfe/reuse:4-debian lint
   store_exit_code "$?" "License" "License check failed, see logs and fix problems." "License check passed."
@@ -106,6 +176,7 @@ license() {
 # Commit compliance with Conform
 commit() {
   detect_container_engine
+  check_podman_machine
   local compareToBranch='main'
   local currentBranch
   currentBranch=$(git branch --show-current)
