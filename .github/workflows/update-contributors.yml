@@ -278,36 +278,9 @@ jobs:
             fi
           fi
           
-          # Configure Git with the correct key
-          echo "🔧 Configuring Git with detected key: $FOUND_KEY"
-          git config --local user.signingkey "$FOUND_KEY"
-          git config --local commit.gpgsign true
-          
-          # Display current GPG configuration
-          echo "Current Git configuration:"
-          echo "  user.name: $(git config --local user.name)"
-          echo "  user.email: $(git config --local user.email)"
-          echo "  user.signingkey: $(git config --local user.signingkey)"
-          echo "  commit.gpgsign: $(git config --local commit.gpgsign)"
-          
-          # Test GPG signing before the actual commit
-          echo "🧪 Testing GPG signing with key: $FOUND_KEY"
-          if [ -n "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" ]; then
-            echo "test commit" | gpg --batch --yes --pinentry-mode loopback \
-              --passphrase "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" \
-              --clear-sign --default-key "$FOUND_KEY" >/dev/null 2>&1 && \
-              echo "✅ GPG signing test successful" || \
-              echo "⚠️ GPG signing test failed - trying commit anyway"
-          fi
-          
-          # Add changed files
-          git add CONTRIBUTORS.md
-          
-          # Create the commit with GPG signing
-          echo "Creating commit with GPG signing..."
-          
-          # Set up environment for GPG signing
+          # Set up environment for GPG signing first
           export GPG_TTY=$(tty)
+          export GNUPGHOME="$HOME/.gnupg"
           
           # For password-protected keys, ensure the GPG agent has the passphrase
           if [ -n "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" ]; then
@@ -319,24 +292,70 @@ jobs:
             # Start GPG agent with proper configuration
             gpg-agent --daemon --allow-preset-passphrase --max-cache-ttl 86400 >/dev/null 2>&1 || true
             
-            # Attempt to preset the passphrase if supported
-            if command -v gpg-preset-passphrase >/dev/null 2>&1; then
-              echo "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" | \
-                gpg-preset-passphrase --preset "$FOUND_KEY" 2>/dev/null || true
-            fi
+            # Wait for agent to start
+            sleep 2
             
-            # Alternative: Use environment variable approach
-            export GNUPGHOME="$HOME/.gnupg"
-            export GPG_AGENT_INFO=""
+            # Reload agent configuration
+            echo "RELOADAGENT" | gpg-connect-agent >/dev/null 2>&1 || true
             
-            # Test the key one more time with passphrase
-            echo "Final GPG test with passphrase..."
-            echo "test" | gpg --batch --yes --pinentry-mode loopback \
+            # Try to unlock the key by signing a test message
+            echo "Unlocking GPG key..."
+            echo "test unlock" | gpg --batch --yes --pinentry-mode loopback \
               --passphrase "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" \
               --sign --default-key "$FOUND_KEY" >/dev/null 2>&1 && \
-              echo "✅ GPG key ready for signing" || \
-              echo "⚠️ GPG key test failed - will try commit anyway"
+              echo "✅ GPG key unlocked successfully" || \
+              echo "⚠️ Failed to unlock GPG key"
           fi
+          
+          # Configure Git with the correct key
+          echo "🔧 Configuring Git with detected key: $FOUND_KEY"
+          git config --local user.signingkey "$FOUND_KEY"
+          git config --local commit.gpgsign true
+          
+          # Additional Git GPG configuration for password-protected keys
+          if [ -n "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" ]; then
+            # Configure Git to use the GPG program with proper settings
+            git config --local gpg.program gpg
+            git config --local gpg.format openpgp
+            
+            # Create a wrapper script that provides the passphrase to GPG
+            echo '#!/bin/bash' > /tmp/gpg-with-passphrase.sh
+            echo 'export GPG_TTY=$(tty)' >> /tmp/gpg-with-passphrase.sh
+            echo 'export GNUPGHOME="$HOME/.gnupg"' >> /tmp/gpg-with-passphrase.sh
+            echo 'exec gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" "$@"' >> /tmp/gpg-with-passphrase.sh
+            chmod +x /tmp/gpg-with-passphrase.sh
+            
+            # Set the passphrase as environment variable for the wrapper
+            export GPG_PASSPHRASE="${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}"
+            
+            # Configure Git to use our wrapper script
+            git config --local gpg.program "/tmp/gpg-with-passphrase.sh"
+          fi
+          
+          # Display current GPG configuration
+          echo "Current Git configuration:"
+          echo "  user.name: $(git config --local user.name)"
+          echo "  user.email: $(git config --local user.email)"
+          echo "  user.signingkey: $(git config --local user.signingkey)"
+          echo "  commit.gpgsign: $(git config --local commit.gpgsign)"
+          
+          # Test GPG signing before the actual commit
+          echo "🧪 Final GPG signing test with key: $FOUND_KEY"
+          if [ -n "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" ]; then
+            echo "test commit" | /tmp/gpg-with-passphrase.sh --clear-sign --default-key "$FOUND_KEY" >/dev/null 2>&1 && \
+              echo "✅ GPG signing test successful with wrapper" || \
+              echo "⚠️ GPG signing test failed with wrapper"
+          else
+            echo "test commit" | gpg --clear-sign --default-key "$FOUND_KEY" >/dev/null 2>&1 && \
+              echo "✅ GPG signing test successful" || \
+              echo "⚠️ GPG signing test failed"
+          fi
+          
+          # Add changed files
+          git add CONTRIBUTORS.md
+          
+          # Create the commit with GPG signing
+          echo "Creating commit with GPG signing..."
           
           git commit -m "docs(contributors): update dynamic statistics [automated]
 
@@ -381,6 +400,9 @@ jobs:
           
           Signed-off-by: devex-discovery <devex-discovery@broadsage.com>" --signoff
           }
+          
+          # Clean up temporary files
+          rm -f /tmp/gpg-with-passphrase.sh
           
           echo "✅ Commit created successfully"
           
