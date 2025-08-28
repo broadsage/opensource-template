@@ -87,8 +87,16 @@ jobs:
             if [ -n "$IMPORTED_KEY_ID" ]; then
               echo "✅ Successfully imported GPG key: $IMPORTED_KEY_ID"
               
-              # Set ultimate trust for the key
-              echo "${IMPORTED_KEY_ID}:6:" | gpg --import-ownertrust
+              # Get the full fingerprint for trust setting
+              FINGERPRINT=$(gpg --list-secret-keys --with-colons | grep "^fpr" | head -1 | cut -d: -f10)
+              
+              # Set ultimate trust for the key using fingerprint
+              if [ -n "$FINGERPRINT" ]; then
+                echo "${FINGERPRINT}:6:" | gpg --import-ownertrust
+                echo "✅ Trust set for fingerprint: $FINGERPRINT"
+              else
+                echo "⚠️ Could not get fingerprint, skipping trust setting"
+              fi
               
               # Configure Git to use the imported key
               git config --local user.signingkey "$IMPORTED_KEY_ID"
