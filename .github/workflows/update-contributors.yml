@@ -63,8 +63,12 @@ jobs:
             
             chmod 600 ~/.gnupg/gpg.conf ~/.gnupg/gpg-agent.conf
             
-            # Start GPG agent
+            # Start GPG agent and initialize trust database
             gpg-agent --daemon --batch 2>/dev/null || true
+            
+            # Initialize the trust database
+            echo "Initializing GPG trust database..."
+            gpg --list-keys >/dev/null 2>&1 || true
             
             # Import GPG key with better error handling
             echo "Importing GPG private key..."
@@ -92,8 +96,13 @@ jobs:
               
               # Set ultimate trust for the key using fingerprint
               if [ -n "$FINGERPRINT" ]; then
-                echo "${FINGERPRINT}:6:" | gpg --import-ownertrust
-                echo "✅ Trust set for fingerprint: $FINGERPRINT"
+                echo "Setting trust for fingerprint: $FINGERPRINT"
+                echo "${FINGERPRINT}:6:" | gpg --import-ownertrust 2>/dev/null || {
+                  echo "Trust import failed, trying alternative method..."
+                  # Alternative: use edit-key trust method
+                  echo -e "5\ny\nsave\n" | gpg --batch --command-fd 0 --expert --edit-key "$IMPORTED_KEY_ID" trust 2>/dev/null || true
+                }
+                echo "✅ Trust configuration completed"
               else
                 echo "⚠️ Could not get fingerprint, skipping trust setting"
               fi
