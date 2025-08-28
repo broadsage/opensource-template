@@ -77,13 +77,21 @@ jobs:
                     --import 2>/dev/null || echo "GPG import completed with warnings"
               
               # Configure Git to use GPG with passphrase
+              echo "Configuring Git with GPG key ID: ${{ secrets.DEVEX_GITHUB_GPG_KEY_ID }}"
               git config --local user.signingkey "${{ secrets.DEVEX_GITHUB_GPG_KEY_ID }}"
               git config --local commit.gpgsign true
               git config --local gpg.program gpg
               
+              # Additional GPG configuration for reliable signing
+              git config --local gpg.format openpgp
+              
               # Set up GPG agent for the session
               export GPG_TTY=$(tty)
               echo "RELOADAGENT" | gpg-connect-agent >/dev/null 2>&1 || true
+              
+              # Set environment variables for GPG signing
+              echo "GPG_TTY=$(tty)" >> $GITHUB_ENV
+              echo "GPG_KEY_ID=${{ secrets.DEVEX_GITHUB_GPG_KEY_ID }}" >> $GITHUB_ENV
               
             else
               echo "Using unprotected GPG key"
@@ -92,29 +100,69 @@ jobs:
               chmod 700 ~/.gnupg
               echo "${{ secrets.DEVEX_GITHUB_GPG_PRIVATE_KEY }}" | base64 -d | \
                 gpg --import --batch --yes 2>/dev/null || echo "GPG import completed with warnings"
+              
+              # Configure Git to use GPG
+              echo "Configuring Git with GPG key ID: ${{ secrets.DEVEX_GITHUB_GPG_KEY_ID }}"
               git config --local user.signingkey "${{ secrets.DEVEX_GITHUB_GPG_KEY_ID }}"
               git config --local commit.gpgsign true
+              git config --local gpg.program gpg
+              git config --local gpg.format openpgp
+              
+              # Set environment variables for GPG signing
+              export GPG_TTY=$(tty)
+              echo "GPG_TTY=$(tty)" >> $GITHUB_ENV
+              echo "GPG_KEY_ID=${{ secrets.DEVEX_GITHUB_GPG_KEY_ID }}" >> $GITHUB_ENV
             fi
             
             echo "GPG signing enabled for devex-discovery"
             
+            # Verify and get the correct key format
+            echo "Verifying GPG key format and availability..."
+            echo "Requested key ID: ${{ secrets.DEVEX_GITHUB_GPG_KEY_ID }}"
+            echo "Available secret keys:"
+            gpg --list-secret-keys --keyid-format LONG
+            
+            # Try to find the key in different formats
+            FOUND_KEY=""
+            for key_format in "${{ secrets.DEVEX_GITHUB_GPG_KEY_ID }}" "0x${{ secrets.DEVEX_GITHUB_GPG_KEY_ID }}"; do
+              if gpg --list-secret-keys --with-colons | grep -q "$key_format"; then
+                FOUND_KEY="$key_format"
+                echo "✅ Found key in format: $FOUND_KEY"
+                break
+              fi
+            done
+            
+            if [ -z "$FOUND_KEY" ]; then
+              echo "❌ Key not found in any format. Trying to extract from available keys..."
+              # Extract the key ID from the available keys
+              EXTRACTED_KEY=$(gpg --list-secret-keys --with-colons | grep "^sec" | cut -d: -f5 | head -1)
+              if [ -n "$EXTRACTED_KEY" ]; then
+                echo "📝 Using extracted key ID: $EXTRACTED_KEY"
+                git config --local user.signingkey "$EXTRACTED_KEY"
+                FOUND_KEY="$EXTRACTED_KEY"
+              else
+                echo "❌ No usable key found"
+                exit 1
+              fi
+            fi
+            
             # Improved GPG key verification
-            echo "Verifying GPG key import..."
-            if gpg --list-secret-keys --with-colons | grep -q "${{ secrets.DEVEX_GITHUB_GPG_KEY_ID }}"; then
+            echo "Verifying GPG key import with key: $FOUND_KEY"
+            if gpg --list-secret-keys --with-colons | grep -q "$FOUND_KEY"; then
               echo "✅ GPG key imported and verified successfully"
               
               # Test signing capability with proper passphrase handling
-              echo "Testing GPG signing capability..."
+              echo "Testing GPG signing capability with key: $FOUND_KEY"
               if [ -n "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" ]; then
                 # Test with passphrase for password-protected keys
                 echo "test signing" | gpg --batch --yes --pinentry-mode loopback \
                   --passphrase "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" \
-                  --clear-sign --default-key "${{ secrets.DEVEX_GITHUB_GPG_KEY_ID }}" >/dev/null 2>&1 && \
+                  --clear-sign --default-key "$FOUND_KEY" >/dev/null 2>&1 && \
                   echo "✅ GPG signing test successful (password-protected)" || \
                   echo "⚠️ GPG signing test failed - will try during actual commit"
               else
                 # Test without passphrase for unprotected keys
-                echo "test signing" | gpg --clear-sign --default-key "${{ secrets.DEVEX_GITHUB_GPG_KEY_ID }}" >/dev/null 2>&1 && \
+                echo "test signing" | gpg --clear-sign --default-key "$FOUND_KEY" >/dev/null 2>&1 && \
                   echo "✅ GPG signing test successful (unprotected)" || \
                   echo "⚠️ GPG signing test failed - will try during actual commit"
               fi
