@@ -68,19 +68,15 @@ jobs:
               chmod 700 ~/.gnupg
               
               # Create comprehensive GPG configuration for automated signing
-              cat > ~/.gnupg/gpg.conf << EOF
-              use-agent
-              pinentry-mode loopback
-              batch
-              yes
-              EOF
+              echo "use-agent" > ~/.gnupg/gpg.conf
+              echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+              echo "batch" >> ~/.gnupg/gpg.conf
+              echo "yes" >> ~/.gnupg/gpg.conf
               
-              cat > ~/.gnupg/gpg-agent.conf << EOF
-              pinentry-program /usr/bin/pinentry-curses
-              allow-loopback-pinentry
-              default-cache-ttl 28800
-              max-cache-ttl 86400
-              EOF
+              echo "pinentry-program /usr/bin/pinentry-curses" > ~/.gnupg/gpg-agent.conf
+              echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+              echo "default-cache-ttl 28800" >> ~/.gnupg/gpg-agent.conf
+              echo "max-cache-ttl 86400" >> ~/.gnupg/gpg-agent.conf
               
               chmod 600 ~/.gnupg/gpg.conf ~/.gnupg/gpg-agent.conf
               
