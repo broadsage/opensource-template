@@ -102,10 +102,23 @@ jobs:
             echo "Verifying GPG key import..."
             if gpg --list-secret-keys --with-colons | grep -q "${{ secrets.DEVEX_GITHUB_GPG_KEY_ID }}"; then
               echo "✅ GPG key imported and verified successfully"
-              # Test signing capability
-              echo "test" | gpg --clear-sign --default-key "${{ secrets.DEVEX_GITHUB_GPG_KEY_ID }}" >/dev/null 2>&1 && \
-                echo "✅ GPG signing test successful" || \
-                echo "⚠️ GPG signing test failed, but key is imported - this is often normal"
+              
+              # Test signing capability with proper passphrase handling
+              echo "Testing GPG signing capability..."
+              if [ -n "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" ]; then
+                # Test with passphrase for password-protected keys
+                echo "test signing" | gpg --batch --yes --pinentry-mode loopback \
+                  --passphrase "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" \
+                  --clear-sign --default-key "${{ secrets.DEVEX_GITHUB_GPG_KEY_ID }}" >/dev/null 2>&1 && \
+                  echo "✅ GPG signing test successful (password-protected)" || \
+                  echo "⚠️ GPG signing test failed - will try during actual commit"
+              else
+                # Test without passphrase for unprotected keys
+                echo "test signing" | gpg --clear-sign --default-key "${{ secrets.DEVEX_GITHUB_GPG_KEY_ID }}" >/dev/null 2>&1 && \
+                  echo "✅ GPG signing test successful (unprotected)" || \
+                  echo "⚠️ GPG signing test failed - will try during actual commit"
+              fi
+              
             else
               echo "⚠️ GPG key verification inconclusive, but import appeared successful"
               echo "Listing available keys for debugging:"
