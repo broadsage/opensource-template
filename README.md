@@ -98,7 +98,7 @@ This enterprise-grade open source template provides organizations with a product
 3. **Customize Configuration**
 
    - Update `publiccode.yml` with project metadata
-   - Modify `CONTRIBUTING.md` and `GOVERNANCE.md` for your organization
+   - Modify `CONTRIBUTING.md` and `docs/governance.md` for your organization
    - Configure `config/mega-linter.yml` for your tech stack
    - Update badges and links in README
 
@@ -123,7 +123,7 @@ This enterprise-grade open source template provides organizations with a product
 
 2. **Customize Governance**
 
-   - Adapt `GOVERNANCE.md` to your organizational structure
+   - Adapt `docs/governance.md` to your organizational structure
    - Configure contributor agreement and approval processes
    - Set up security incident response procedures
 
@@ -145,7 +145,15 @@ This template follows enterprise-grade organizational patterns designed for scal
 │   └── workflows/              # CI/CD automation workflows
 ├── config/                     # Configuration files and linting rules
 │   └── mega-linter.yml         # Code quality and security scanning configuration
-├── docs/                       # Project documentation (when applicable)
+├── docs/                       # Project documentation
+│   ├── README.md               # Documentation index and navigation
+│   ├── development.md          # Developer setup and workflow documentation
+│   ├── governance.md           # Project governance and decision-making processes
+│   ├── community-guidelines.md # Detailed community interaction guidelines
+│   ├── support.md              # Support channels and community resources
+│   ├── contributors.md         # Contributor recognition and hall of fame
+│   └── security/               # Security-specific documentation
+│       └── codeql-implementation.md # CodeQL security analysis setup
 ├── scripts/                    # Automation and utility scripts
 │   ├── compliance.sh           # Compliance validation tools
 │   ├── setup-project.sh        # Project initialization script
@@ -156,12 +164,9 @@ This template follows enterprise-grade organizational patterns designed for scal
 ├── CHANGELOG.md                # Version history and release notes
 ├── CODE_OF_CONDUCT.md          # Community standards and behavior guidelines
 ├── CONTRIBUTING.md             # Contribution guidelines and processes
-├── DEVELOPMENT.md              # Developer setup and workflow documentation
-├── GOVERNANCE.md               # Project governance and decision-making processes
 ├── LICENSE                     # Primary project license
 ├── README.md                   # Project overview (this file)
 ├── SECURITY.md                 # Security policy and vulnerability reporting
-├── SUPPORT.md                  # Support channels and community resources
 ├── publiccode.yml              # Public administration metadata
 └── REUSE.toml                  # REUSE compliance configuration
 ```
@@ -171,6 +176,7 @@ This template follows enterprise-grade organizational patterns designed for scal
 - **`.devcontainer/`**: Standardized development environments using VS Code DevContainers
 - **`.github/`**: Complete GitHub automation including workflows, templates, and community health files
 - **`config/`**: Centralized configuration management for tools and processes
+- **`docs/`**: Comprehensive project documentation including governance, development guides, and security docs
 - **`scripts/`**: Automation tools for project maintenance, compliance, and contributor management
 - **`security-reports/`**: Security assessment documentation and vulnerability tracking
 
@@ -229,9 +235,9 @@ This template follows enterprise-grade organizational patterns designed for scal
 - **📝 Pull Request Templates**: Comprehensive PR guidelines and checklists
 - **💬 Discussion Templates**: Templates for ideas, polls, and show-and-tell
 - **🤖 Automated Workflows**: Welcome messages, triage, stale issue management, and contributor recognition
-- **🏆 Contributor Recognition**: [Hall of Fame](CONTRIBUTORS.md) and achievement system
-- **🛟 Comprehensive Support**: [Support Guide](SUPPORT.md) with multiple channels
-- **📋 Community Guidelines**: [Community Guidelines](COMMUNITY_GUIDELINES.md) for healthy collaboration
+- **🏆 Contributor Recognition**: [Hall of Fame](docs/contributors.md) and achievement system
+- **🛟 Comprehensive Support**: [Support Guide](docs/support.md) with multiple channels
+- **📋 Community Guidelines**: [Community Guidelines](docs/community-guidelines.md) for healthy collaboration
 
 ### How to Contribute
 
@@ -268,16 +274,22 @@ Your feedback and participation make this project better for everyone. Thank you
 ### Core Documentation
 
 - **[CONTRIBUTING.md](CONTRIBUTING.md)**: Comprehensive contribution guidelines and development workflow
-- **[GOVERNANCE.md](GOVERNANCE.md)**: Project governance model and decision-making processes
+- **[docs/governance.md](docs/governance.md)**: Project governance model and decision-making processes
 - **[SECURITY.md](SECURITY.md)**: Security policy and vulnerability reporting procedures
 - **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)**: Community standards and behavioral expectations
-- **[DEVELOPMENT.md](DEVELOPMENT.md)**: Developer setup, tools, and workflow documentation
+- **[docs/development.md](docs/development.md)**: Developer setup, tools, and workflow documentation
 
 ### Additional Resources
 
-- **[SUPPORT.md](SUPPORT.md)**: Support channels and community resources
+- **[docs/support.md](docs/support.md)**: Support channels and community resources
 - **[CHANGELOG.md](CHANGELOG.md)**: Version history and release notes
-- **[COMMUNITY_GUIDELINES.md](COMMUNITY_GUIDELINES.md)**: Detailed community interaction guidelines
+- **[docs/community-guidelines.md](docs/community-guidelines.md)**: Detailed community interaction guidelines
+- **[docs/contributors.md](docs/contributors.md)**: Contributor recognition and hall of fame
+- **[docs/security/](docs/security/)**: Security-specific documentation and implementation guides
+
+### Documentation Navigation
+
+For comprehensive documentation navigation and organization, see [docs/README.md](docs/README.md).
 
 ## License
 

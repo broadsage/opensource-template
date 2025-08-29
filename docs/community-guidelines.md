@@ -121,7 +121,7 @@ We believe in recognizing valuable contributions:
 ### Recognition Types
 
 - **Contributor Badges**: GitHub profile recognition
-- **Hall of Fame**: Featured in our [Contributors](CONTRIBUTORS.md) page
+- **Hall of Fame**: Featured in our [Contributors](contributors.md) page
 - **Special Mentions**: Called out in release notes
 - **Maintainer Invitations**: For exceptional ongoing contributors
 
@@ -139,7 +139,7 @@ We believe in recognizing valuable contributions:
 ### Community Support
 
 - **[GitHub Discussions](https://github.com/broadsage/opensource-template/discussions)**: General questions and community help
-- **[Support Guide](SUPPORT.md)**: Comprehensive support information
+- **[Support Guide](support.md)**: Comprehensive support information
 
 ### Reporting Issues
 
@@ -172,7 +172,7 @@ We believe in recognizing valuable contributions:
 - **[README](README.md)**: Project overview and quick start
 - **[Contributing Guide](CONTRIBUTING.md)**: How to contribute
 - **[Code of Conduct](CODE_OF_CONDUCT.md)**: Behavioral expectations
-- **[Support](SUPPORT.md)**: Getting help and support
+- **[Support](support.md)**: Getting help and support
 
 ### Community Spaces
 
