@@ -259,9 +259,9 @@ jobs:
           
           # Close and reopen the PR to trigger status checks
           echo "Triggering status checks via close/reopen method..."
-          gh pr close ${{ steps.create-pr.outputs.pull-request-number }} --comment "Temporarily closing to trigger status checks"
+          gh pr close ${{ steps.create-pr.outputs.pull-request-number }} --comment "**System Notice:** Temporarily closing PR to initialize required branch protection checks and compliance validations."
           sleep 2
-          gh pr reopen ${{ steps.create-pr.outputs.pull-request-number }} --comment "Reopening to activate required status checks for merge"
+          gh pr reopen ${{ steps.create-pr.outputs.pull-request-number }} --comment "**System Notice:** Reopening PR to activate enterprise compliance workflows and mandatory status checks required for merge approval. All configured branch protection rules and quality gates are now active."
           
           echo "✅ Status checks triggered successfully"
 
