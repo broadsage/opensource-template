@@ -1,5 +1,7 @@
-# SPDX-FileCopyrightText: 2025 Broadcom Inc. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2025 Broadsage <opensource@broadsage.com>
+#
 # SPDX-License-Identifier: Apache-2.0
+
 name: Update Contributors Statistics
 
 on:
