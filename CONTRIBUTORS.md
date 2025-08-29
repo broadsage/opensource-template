@@ -132,7 +132,6 @@ Contributors who bring groundbreaking ideas or solutions.
 
 🏆 **Top Contributors:**
 
-
 ## 📋 How to Get Recognized
 
 1. **Make a Contribution**: Code, documentation, bug reports, ideas, etc.
