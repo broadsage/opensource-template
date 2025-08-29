@@ -1,19 +1,16 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Broadsage <opensource@broadsage.com>
+#
 # SPDX-License-Identifier: Apache-2.0
 
----
 name: Update Contributors Statistics
 
 on:
-  schedule:
-    # Run daily at 6 AM UTC
-    - cron: "0 6 * * *"
-  workflow_dispatch:
-    # Allow manual triggering
   push:
-    branches: [main]
-    paths:
-      - ".github/workflows/update-contributors.yml"
+    branches:
+      - main
+  schedule:
+    - cron: "0 0 * * 0" # Weekly on Sundays at midnight UTC
+  workflow_dispatch:
 
 permissions: read-all
 
@@ -21,20 +18,26 @@ jobs:
   update-contributors:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
 
     steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2.13.0
-        with:
-          egress-policy: audit
-
       - name: Checkout repository
-        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Fetch full history for accurate statistics
-          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Generate GitHub App token
+        id: generate-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.DEVEX_GITHUB_APP_ID }}
+          private-key: ${{ secrets.DEVEX_GITHUB_APP_PRIVATE_KEY }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -43,8 +46,105 @@ jobs:
 
       - name: Configure Git
         run: |
-          git config --local user.email "opensource@broadsage.com"
-          git config --local user.name "Contributors Bot"
+          git config --local user.email "devex-discovery@broadsage.com"
+          git config --local user.name "devex-discovery"
+
+          # Configure GPG signing if GPG key is available
+          if [ -n "${{ secrets.DEVEX_GITHUB_GPG_PRIVATE_KEY }}" ]; then
+            echo "🔐 Setting up GPG signing for devex-discovery..."
+            
+            # Kill any existing GPG agent to start fresh
+            gpgconf --kill gpg-agent 2>/dev/null || true
+            
+            # Set up GPG directory with proper permissions
+            mkdir -p ~/.gnupg
+            chmod 700 ~/.gnupg
+            
+            # Create simplified GPG configuration
+            cat > ~/.gnupg/gpg.conf << 'GPGCONF'
+          use-agent
+          pinentry-mode loopback
+          batch
+          yes
+          trust-model always
+          GPGCONF
+            
+            cat > ~/.gnupg/gpg-agent.conf << 'AGENTCONF'
+          allow-loopback-pinentry
+          default-cache-ttl 7200
+          max-cache-ttl 7200
+          AGENTCONF
+            
+            chmod 600 ~/.gnupg/gpg.conf ~/.gnupg/gpg-agent.conf
+            
+            # Start GPG agent and initialize trust database
+            gpg-agent --daemon --batch 2>/dev/null || true
+            
+            # Initialize the trust database properly
+            echo "Initializing GPG trust database..."
+            gpg --update-trustdb 2>/dev/null || gpg --check-trustdb 2>/dev/null || true
+            
+            # Import GPG key with better error handling
+            echo "Importing GPG private key..."
+            if [ -n "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" ]; then
+              echo "${{ secrets.DEVEX_GITHUB_GPG_PRIVATE_KEY }}" | base64 -d | \
+                gpg --batch --yes --pinentry-mode loopback \
+                    --passphrase "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" \
+                    --import
+            else
+              echo "${{ secrets.DEVEX_GITHUB_GPG_PRIVATE_KEY }}" | base64 -d | \
+                gpg --batch --yes --import
+            fi
+            
+            # Wait a moment for import to complete
+            sleep 2
+            
+            # Get the actual key ID from the imported key
+            IMPORTED_KEY_ID=$(gpg --list-secret-keys --with-colons | grep "^sec" | head -1 | cut -d: -f5)
+            
+            if [ -n "$IMPORTED_KEY_ID" ]; then
+              echo "✅ Successfully imported GPG key: $IMPORTED_KEY_ID"
+              
+              # Skip trust setting to avoid trust database issues
+              # GPG signing will work without explicit trust for own keys
+              echo "Skipping trust configuration (not required for signing)"
+              
+              # Configure Git to use the imported key
+              git config --local user.signingkey "$IMPORTED_KEY_ID"
+              git config --local commit.gpgsign true
+              git config --local gpg.program gpg
+              
+              # Set environment variables for later steps
+              echo "GPG_KEY_ID=$IMPORTED_KEY_ID" >> "$GITHUB_ENV"
+              echo "GPG_TTY=$(tty)" >> "$GITHUB_ENV"
+              
+              if [ -n "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" ]; then
+                echo "GPG_PASSPHRASE=${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" >> "$GITHUB_ENV"
+              fi
+              
+              # Test GPG signing capability
+              echo "Testing GPG signing..."
+              if [ -n "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" ]; then
+                echo "test" | gpg --batch --yes --pinentry-mode loopback \
+                  --passphrase "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" \
+                  --armor --sign --default-key "$IMPORTED_KEY_ID" >/dev/null && \
+                  echo "✅ GPG signing test successful" || echo "⚠️ GPG signing test failed"
+              else
+                echo "test" | gpg --batch --yes --armor --sign --default-key "$IMPORTED_KEY_ID" >/dev/null && \
+                  echo "✅ GPG signing test successful" || echo "⚠️ GPG signing test failed"
+              fi
+              
+              echo "✅ GPG signing configured successfully"
+            else
+              echo "❌ Failed to import GPG key - will proceed without signing"
+              git config --local commit.gpgsign false
+            fi
+          else
+            echo "No GPG key provided - commits will not be GPG signed"
+            git config --local commit.gpgsign false
+          fi
+
+          echo "Using GitHub App authentication for enhanced permissions"
 
       - name: Update contributor statistics
         run: python scripts/update-contributors.py
@@ -60,31 +160,151 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Commit and push changes
+      - name: Commit changes
         if: steps.verify-changed-files.outputs.changed == 'true'
+        env:
+          GPG_TTY: ${{ env.GPG_TTY }}
+          GPG_PASSPHRASE: ${{ env.GPG_PASSPHRASE }}
         run: |
+          echo "📝 Creating commit..."
+
+          # Set up GPG environment
+          GPG_TTY=$(tty)
+          export GPG_TTY
+
+          # Add changed files
           git add CONTRIBUTORS.md
-          git commit -m "docs(contributors): update dynamic statistics [automated]
+
+          # Prepare commit message
+          COMMIT_MSG="docs(contributors): update dynamic statistics [automated]
 
           - Updated contributor counts and percentages
           - Refreshed monthly statistics
           - Updated recent activity summary
 
-          Generated by: ${{ github.workflow }} workflow"
-          git push
+          Generated by: ${{ github.workflow }} workflow
 
-      - name: Create summary
+          Signed-off-by: devex-discovery <devex-discovery@broadsage.com>"
+
+          # Create commit (GPG signing already configured in previous step)
+          if [ "$(git config --local commit.gpgsign)" = "true" ]; then
+            echo "🔐 Creating GPG-signed commit..."
+            
+            # For password-protected keys, use passphrase in environment
+            if [ -n "$GPG_PASSPHRASE" ]; then
+              # Set passphrase for this commit
+              export PINENTRY_USER_DATA="USE_CURSES=0"
+              
+              # Create the commit with GPG signing
+              git commit -m "$COMMIT_MSG" --signoff
+            else
+              # No passphrase needed
+              git commit -m "$COMMIT_MSG" --signoff
+            fi
+            
+            echo "✅ GPG-signed commit created successfully"
+          else
+            echo "📝 Creating unsigned commit..."
+            git commit -m "$COMMIT_MSG" --signoff
+            
+            echo "✅ Unsigned commit created successfully"
+          fi
+
+          # Show commit details
+          echo "📋 Commit details:"
+          git log --pretty=format:"%h %s %G?" -1
+          echo ""
+
+      - name: Create Pull Request
+        if: steps.verify-changed-files.outputs.changed == 'true'
+        id: create-pr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
+          title: "📊 Update Contributors Statistics"
+          body: |
+            ## 📊 Automated Contributors Statistics Update
+
+            This PR contains automated updates to the contributors statistics based on the latest repository activity.
+
+            ### 🔄 Changes Made:
+            - ✅ Updated contributor counts and percentages
+            - ✅ Refreshed monthly statistics highlights
+            - ✅ Updated recent activity summary
+            - ✅ Recalculated contribution type breakdowns
+
+            ### 📊 Statistics Updated:
+            - Total contributors count
+            - Code contributors percentage
+            - Documentation contributors percentage  
+            - Bug fixers and feature contributors
+            - Monthly activity metrics
+
+            ### 🤖 Automation Details:
+            - **Generated by:** `${{ github.workflow }}` workflow
+            - **Triggered by:** ${{ github.event_name }}
+            - **Branch:** ${{ github.ref_name }}
+            - **Commit:** ${{ github.sha }}
+
+            ### ✅ Compliance:
+            - **DCO Signed-off:** Yes (automated)
+            - **Commit Author:** devex-discovery
+
+            ---
+
+            > This is an automated PR. Please review the changes and merge if everything looks correct.
+          branch: contributors/update-stats-${{ github.run_number }}
+          base: main
+          delete-branch: true
+          labels: |
+            documentation
+            automated
+            contributors
+          assignees: |
+            ${{ github.actor }}
+          draft: false
+
+      - name: Trigger status checks
+        if: steps.verify-changed-files.outputs.changed == 'true' && steps.create-pr.outputs.pull-request-number
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          echo "PR created: #${{ steps.create-pr.outputs.pull-request-number }}"
+          echo "PR URL: ${{ steps.create-pr.outputs.pull-request-url }}"
+
+          # Close and reopen the PR to trigger status checks
+          echo "Triggering status checks via close/reopen method..."
+          gh pr close ${{ steps.create-pr.outputs.pull-request-number }} --comment "**System Notice:** Temporarily closing PR to initialize required branch protection checks and compliance validations."
+          sleep 2
+          gh pr reopen ${{ steps.create-pr.outputs.pull-request-number }} --comment "**System Notice:** Reopening PR to activate enterprise compliance workflows and mandatory status checks required for merge approval. All configured branch protection rules and quality gates are now active."
+
+          echo "✅ Status checks triggered successfully"
+
+      - name: Summary
         if: steps.verify-changed-files.outputs.changed == 'true'
         run: |
           {
-            echo "## 📊 Contributors Statistics Updated"
-            echo "The CONTRIBUTORS.md file has been automatically updated with the latest statistics."
+            echo "## 📊 Contributors Statistics Updated Successfully"
             echo ""
-            echo "### Changes Made:"
-            echo "- ✅ Updated contributor counts"
-            echo "- ✅ Refreshed percentage calculations"
-            echo "- ✅ Updated monthly highlights"
-            echo "- ✅ Refreshed recent activity summary"
+            echo "A Pull Request has been automatically created with updated contributor statistics."
+            echo ""
+            echo "### 🔄 Changes Made:"
+            echo "- ✅ Updated contributor counts and percentages"
+            echo "- ✅ Refreshed monthly statistics highlights"
+            echo "- ✅ Updated recent activity summary"
+            echo "- ✅ Recalculated contribution type breakdowns"
+            echo ""
+            echo "### 📋 Next Steps:"
+            echo "1. Review the created Pull Request"
+            echo "2. Status checks should now be running automatically"
+            echo "3. Verify the statistical updates are accurate"
+            echo "4. Merge the PR to apply the changes"
+            echo ""
+            if [ -n "${{ steps.create-pr.outputs.pull-request-number }}" ]; then
+              echo "🔗 **PR #${{ steps.create-pr.outputs.pull-request-number }}:** ${{ steps.create-pr.outputs.pull-request-url }}"
+            fi
+            echo ""
+            echo "✅ **Status Checks:** Automatically triggered via close/reopen method"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: No changes summary

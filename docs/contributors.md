@@ -116,25 +116,21 @@ Contributors who bring groundbreaking ideas or solutions.
 
 ## 🎊 Monthly Highlights
 
-### ### August 2025
+### ### ### August 2025
 
 📊 **This Month Statistics:**
 
-- 📈 Commits: 81
+- 📈 Commits: 83
 - 👥 Active Contributors: 4
 - 📅 Last Activity: %Y->- (HEAD -> develop, origin/develop)
 
 🎯 **Project Progress:**
 
-- 🚀 Total Commits: 173
-- 👥 Total Contributors: 4
+- 🚀 Total Commits: 175
+- 👥 Total Contributors: 0
 - 📅 Project Started: %Y
 
 🏆 **Top Contributors:**
-
-- Jeh (80 commits)
-- Jeh1928 (72 commits)
-- dependabot[bot] (19 commits)
 
 ## 📋 How to Get Recognized
 
