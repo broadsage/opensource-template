@@ -5,6 +5,9 @@
 name: Update Contributors Statistics
 
 on:
+  push:
+    branches:
+      - main
   schedule:
     - cron: "0 0 * * 0" # Weekly on Sundays at midnight UTC
   workflow_dispatch:
