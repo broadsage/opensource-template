@@ -12,29 +12,25 @@ on:
     - cron: "0 0 * * 0" # Weekly on Sundays at midnight UTC
   workflow_dispatch:
 
+# Minimal permissions - GitHub token only gets read access
 permissions: read-all
 
 jobs:
   update-contributors:
     runs-on: ubuntu-latest
+    # Explicit minimal permissions for this job
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read # Only read for checkout, writes happen via personal token
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          # Use default token for initial checkout to preserve GPG verification
-          token: ${{ github.token }}
-
-      - name: Generate GitHub App token
-        id: generate-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ secrets.DEVEX_GITHUB_APP_ID }}
-          private-key: ${{ secrets.DEVEX_GITHUB_APP_PRIVATE_KEY }}
+          # Use opensource-committer GitHub token for git operations
+          # Personal token preserves GPG verification chain (GitHub Apps cannot verify human GPG keys)
+          # This follows security best practices for automated commits requiring cryptographic verification
+          token: ${{ secrets.DEVEX_GITHUB_COMMITTER_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -134,7 +130,7 @@ jobs:
                 echo "   2. Or use your personal email that's in the GPG key for commits"
                 echo ""
                 echo "   Current GPG key emails:"
-                echo "$GPG_KEY_EMAILS" | sed 's/^/      /'
+                echo "$GPG_KEY_EMAILS" | while IFS= read -r line; do echo "      $line"; done
               fi
               
               # Skip trust setting to avoid trust database issues
@@ -199,7 +195,7 @@ jobs:
             git config --local commit.gpgsign false
           fi
 
-          echo "Using GitHub App authentication for enhanced permissions"
+          echo "Using opensource-committer authentication for enhanced permissions"
 
       - name: Update contributor statistics
         run: python scripts/update-contributors.py
@@ -215,17 +211,13 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Switch to GitHub App token for enhanced operations
+      - name: Configure Git authentication
         if: steps.verify-changed-files.outputs.changed == 'true'
         run: |
-          # Configure Git remote to use GitHub App token for push operations
+          # Configure Git remote to use opensource-committer token for push operations
           # This provides enhanced permissions while preserving GPG signing
-          git remote set-url origin "https://x-access-token:${{ steps.generate-token.outputs.token }}@github.com/${{ github.repository }}.git"
-          echo "✅ Configured GitHub App token for repository operations"
-          else
-            echo "Changes detected"
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
+          git remote set-url origin "https://x-access-token:${{ secrets.DEVEX_GITHUB_COMMITTER_TOKEN }}@github.com/${{ github.repository }}.git"
+          echo "✅ Configured opensource-committer token for repository operations"
 
       - name: Commit changes
         if: steps.verify-changed-files.outputs.changed == 'true'
@@ -296,7 +288,7 @@ jobs:
         id: create-pr
         uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ steps.generate-token.outputs.token }}
+          token: ${{ secrets.DEVEX_GITHUB_COMMITTER_TOKEN }}
           title: "📊 Update Contributors Statistics"
           body: |
             ## 📊 Automated Contributors Statistics Update
@@ -326,7 +318,7 @@ jobs:
             - **DCO Signed-off:** Yes (automated)
             - **Commit Author:** opensource-committer
             - **GPG Signed:** Yes (verified commits with personal GPG key)
-            - **Authentication:** Hybrid approach (default token for commits, GitHub App for enhanced operations)
+            - **Authentication:** opensource-committer GitHub token
             - **Security:** Enhanced permissions with preserved verification
 
             ---
@@ -346,7 +338,7 @@ jobs:
       - name: Trigger status checks
         if: steps.verify-changed-files.outputs.changed == 'true' && steps.create-pr.outputs.pull-request-number
         env:
-          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+          GH_TOKEN: ${{ secrets.DEVEX_GITHUB_COMMITTER_TOKEN }}
         run: |
           echo "PR created: #${{ steps.create-pr.outputs.pull-request-number }}"
           echo "PR URL: ${{ steps.create-pr.outputs.pull-request-url }}"
