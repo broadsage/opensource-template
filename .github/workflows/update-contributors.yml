@@ -39,111 +39,16 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.x"
-
       - name: Configure Git
         run: |
-          git config --local user.email "devex-discovery@broadsage.com"
-          git config --local user.name "devex-discovery"
-
-          # Configure GPG signing if GPG key is available
-          if [ -n "${{ secrets.DEVEX_GITHUB_GPG_PRIVATE_KEY }}" ]; then
-            echo "🔐 Setting up GPG signing for devex-discovery..."
-            
-            # Kill any existing GPG agent to start fresh
-            gpgconf --kill gpg-agent 2>/dev/null || true
-            
-            # Set up GPG directory with proper permissions
-            mkdir -p ~/.gnupg
-            chmod 700 ~/.gnupg
-            
-            # Create simplified GPG configuration
-            cat > ~/.gnupg/gpg.conf << 'GPGCONF'
-          use-agent
-          pinentry-mode loopback
-          batch
-          yes
-          trust-model always
-          GPGCONF
-            
-            cat > ~/.gnupg/gpg-agent.conf << 'AGENTCONF'
-          allow-loopback-pinentry
-          default-cache-ttl 7200
-          max-cache-ttl 7200
-          AGENTCONF
-            
-            chmod 600 ~/.gnupg/gpg.conf ~/.gnupg/gpg-agent.conf
-            
-            # Start GPG agent and initialize trust database
-            gpg-agent --daemon --batch 2>/dev/null || true
-            
-            # Initialize the trust database properly
-            echo "Initializing GPG trust database..."
-            gpg --update-trustdb 2>/dev/null || gpg --check-trustdb 2>/dev/null || true
-            
-            # Import GPG key with better error handling
-            echo "Importing GPG private key..."
-            if [ -n "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" ]; then
-              echo "${{ secrets.DEVEX_GITHUB_GPG_PRIVATE_KEY }}" | base64 -d | \
-                gpg --batch --yes --pinentry-mode loopback \
-                    --passphrase "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" \
-                    --import
-            else
-              echo "${{ secrets.DEVEX_GITHUB_GPG_PRIVATE_KEY }}" | base64 -d | \
-                gpg --batch --yes --import
-            fi
-            
-            # Wait a moment for import to complete
-            sleep 2
-            
-            # Get the actual key ID from the imported key
-            IMPORTED_KEY_ID=$(gpg --list-secret-keys --with-colons | grep "^sec" | head -1 | cut -d: -f5)
-            
-            if [ -n "$IMPORTED_KEY_ID" ]; then
-              echo "✅ Successfully imported GPG key: $IMPORTED_KEY_ID"
-              
-              # Skip trust setting to avoid trust database issues
-              # GPG signing will work without explicit trust for own keys
-              echo "Skipping trust configuration (not required for signing)"
-              
-              # Configure Git to use the imported key
-              git config --local user.signingkey "$IMPORTED_KEY_ID"
-              git config --local commit.gpgsign true
-              git config --local gpg.program gpg
-              
-              # Set environment variables for later steps
-              echo "GPG_KEY_ID=$IMPORTED_KEY_ID" >> "$GITHUB_ENV"
-              echo "GPG_TTY=$(tty)" >> "$GITHUB_ENV"
-              
-              if [ -n "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" ]; then
-                echo "GPG_PASSPHRASE=${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" >> "$GITHUB_ENV"
-              fi
-              
-              # Test GPG signing capability
-              echo "Testing GPG signing..."
-              if [ -n "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" ]; then
-                echo "test" | gpg --batch --yes --pinentry-mode loopback \
-                  --passphrase "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" \
-                  --armor --sign --default-key "$IMPORTED_KEY_ID" >/dev/null && \
-                  echo "✅ GPG signing test successful" || echo "⚠️ GPG signing test failed"
-              else
-                echo "test" | gpg --batch --yes --armor --sign --default-key "$IMPORTED_KEY_ID" >/dev/null && \
-                  echo "✅ GPG signing test successful" || echo "⚠️ GPG signing test failed"
-              fi
-              
-              echo "✅ GPG signing configured successfully"
-            else
-              echo "❌ Failed to import GPG key - will proceed without signing"
-              git config --local commit.gpgsign false
-            fi
-          else
-            echo "No GPG key provided - commits will not be GPG signed"
-            git config --local commit.gpgsign false
-          fi
-
+          # Configure Git to use GitHub Actions bot for verified commits
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+          # Disable GPG signing since GitHub Actions bot commits are automatically verified
+          git config --local commit.gpgsign false
+          
+          echo "✅ Configured Git to use GitHub Actions bot for verified commits"
           echo "Using GitHub App authentication for enhanced permissions"
 
       - name: Update contributor statistics
@@ -162,15 +67,8 @@ jobs:
 
       - name: Commit changes
         if: steps.verify-changed-files.outputs.changed == 'true'
-        env:
-          GPG_TTY: ${{ env.GPG_TTY }}
-          GPG_PASSPHRASE: ${{ env.GPG_PASSPHRASE }}
         run: |
-          echo "📝 Creating commit..."
-
-          # Set up GPG environment
-          GPG_TTY=$(tty)
-          export GPG_TTY
+          echo "📝 Creating commit with GitHub Actions bot..."
 
           # Add changed files
           git add CONTRIBUTORS.md
@@ -184,35 +82,18 @@ jobs:
 
           Generated by: ${{ github.workflow }} workflow
 
-          Signed-off-by: devex-discovery <devex-discovery@broadsage.com>"
+          Signed-off-by: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
 
-          # Create commit (GPG signing already configured in previous step)
-          if [ "$(git config --local commit.gpgsign)" = "true" ]; then
-            echo "🔐 Creating GPG-signed commit..."
-            
-            # For password-protected keys, use passphrase in environment
-            if [ -n "$GPG_PASSPHRASE" ]; then
-              # Set passphrase for this commit
-              export PINENTRY_USER_DATA="USE_CURSES=0"
-              
-              # Create the commit with GPG signing
-              git commit -m "$COMMIT_MSG" --signoff
-            else
-              # No passphrase needed
-              git commit -m "$COMMIT_MSG" --signoff
-            fi
-            
-            echo "✅ GPG-signed commit created successfully"
-          else
-            echo "📝 Creating unsigned commit..."
-            git commit -m "$COMMIT_MSG" --signoff
-            
-            echo "✅ Unsigned commit created successfully"
-          fi
+          # Create commit (will be automatically verified by GitHub)
+          echo "� Creating verified commit with GitHub Actions bot..."
+          git commit -m "$COMMIT_MSG" --signoff
+          
+          echo "✅ Verified commit created successfully"
 
           # Show commit details
           echo "📋 Commit details:"
-          git log --pretty=format:"%h %s %G?" -1
+          git log --pretty=format:"%h %s %ae" -1
+          echo ""
           echo ""
 
       - name: Create Pull Request
@@ -248,7 +129,7 @@ jobs:
 
             ### ✅ Compliance:
             - **DCO Signed-off:** Yes (automated)
-            - **Commit Author:** devex-discovery
+            - **Commit Author:** github-actions[bot]
 
             ---
 
