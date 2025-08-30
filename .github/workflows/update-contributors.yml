@@ -67,12 +67,16 @@ jobs:
           batch
           yes
           trust-model always
+          no-tty
+          quiet
           GPGCONF
             
             cat > ~/.gnupg/gpg-agent.conf << 'AGENTCONF'
           allow-loopback-pinentry
           default-cache-ttl 7200
           max-cache-ttl 7200
+          pinentry-program /usr/bin/pinentry-curses
+          no-grab
           AGENTCONF
             
             chmod 600 ~/.gnupg/gpg.conf ~/.gnupg/gpg-agent.conf
@@ -116,7 +120,7 @@ jobs:
               
               # Set environment variables for later steps
               echo "GPG_KEY_ID=$IMPORTED_KEY_ID" >> "$GITHUB_ENV"
-              echo "GPG_TTY=$(tty)" >> "$GITHUB_ENV"
+              echo "GPG_TTY=/dev/null" >> "$GITHUB_ENV"
               
               if [ -n "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" ]; then
                 echo "GPG_PASSPHRASE=${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" >> "$GITHUB_ENV"
@@ -124,13 +128,14 @@ jobs:
               
               # Test GPG signing capability
               echo "Testing GPG signing..."
+              export GPG_TTY=/dev/null
               if [ -n "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" ]; then
-                echo "test" | gpg --batch --yes --pinentry-mode loopback \
+                echo "test" | gpg --batch --yes --pinentry-mode loopback --no-tty \
                   --passphrase "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" \
-                  --armor --sign --default-key "$IMPORTED_KEY_ID" >/dev/null && \
+                  --armor --sign --default-key "$IMPORTED_KEY_ID" >/dev/null 2>&1 && \
                   echo "✅ GPG signing test successful" || echo "⚠️ GPG signing test failed"
               else
-                echo "test" | gpg --batch --yes --armor --sign --default-key "$IMPORTED_KEY_ID" >/dev/null && \
+                echo "test" | gpg --batch --yes --no-tty --armor --sign --default-key "$IMPORTED_KEY_ID" >/dev/null 2>&1 && \
                   echo "✅ GPG signing test successful" || echo "⚠️ GPG signing test failed"
               fi
               
@@ -163,14 +168,15 @@ jobs:
       - name: Commit changes
         if: steps.verify-changed-files.outputs.changed == 'true'
         env:
-          GPG_TTY: ${{ env.GPG_TTY }}
+          GPG_TTY: /dev/null
           GPG_PASSPHRASE: ${{ env.GPG_PASSPHRASE }}
+          GNUPGHOME: ~/.gnupg
         run: |
           echo "📝 Creating commit..."
 
-          # Set up GPG environment
-          GPG_TTY=$(tty)
-          export GPG_TTY
+          # Set up GPG environment for GitHub Actions
+          export GPG_TTY=/dev/null
+          export GNUPGHOME=~/.gnupg
 
           # Add changed files
           git add CONTRIBUTORS.md
@@ -190,14 +196,22 @@ jobs:
           if [ "$(git config --local commit.gpgsign)" = "true" ]; then
             echo "🔐 Creating GPG-signed commit..."
             
+            # Ensure GPG agent is running and configured for batch mode
+            gpg-agent --daemon --batch 2>/dev/null || true
+            
             # For password-protected keys, use passphrase in environment
             if [ -n "$GPG_PASSPHRASE" ]; then
-              # Set passphrase for this commit
-              export PINENTRY_USER_DATA="USE_CURSES=0"
+              echo "Using passphrase-protected GPG key..."
               
-              # Create the commit with GPG signing
+              # Set environment for non-interactive signing
+              export PINENTRY_USER_DATA="USE_CURSES=0"
+              export GPG_PASSPHRASE
+              
+              # Create the commit with GPG signing using passphrase
+              echo "$GPG_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --sign /dev/null >/dev/null 2>&1 || true
               git commit -m "$COMMIT_MSG" --signoff
             else
+              echo "Using non-passphrase-protected GPG key..."
               # No passphrase needed
               git commit -m "$COMMIT_MSG" --signoff
             fi
