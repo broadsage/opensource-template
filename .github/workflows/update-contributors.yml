@@ -26,6 +26,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # Use default token for initial checkout to preserve GPG verification
+          token: ${{ github.token }}
 
       - name: Generate GitHub App token
         id: generate-token
@@ -213,6 +215,18 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Switch to GitHub App token for enhanced operations
+        if: steps.verify-changed-files.outputs.changed == 'true'
+        run: |
+          # Configure Git remote to use GitHub App token for push operations
+          # This provides enhanced permissions while preserving GPG signing
+          git remote set-url origin "https://x-access-token:${{ steps.generate-token.outputs.token }}@github.com/${{ github.repository }}.git"
+          echo "✅ Configured GitHub App token for repository operations"
+          else
+            echo "Changes detected"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Commit changes
         if: steps.verify-changed-files.outputs.changed == 'true'
         env:
@@ -311,6 +325,9 @@ jobs:
             ### ✅ Compliance:
             - **DCO Signed-off:** Yes (automated)
             - **Commit Author:** opensource-committer
+            - **GPG Signed:** Yes (verified commits with personal GPG key)
+            - **Authentication:** Hybrid approach (default token for commits, GitHub App for enhanced operations)
+            - **Security:** Enhanced permissions with preserved verification
 
             ---
 
