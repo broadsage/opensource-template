@@ -109,6 +109,32 @@ jobs:
             if [ -n "$IMPORTED_KEY_ID" ]; then
               echo "✅ Successfully imported GPG key: $IMPORTED_KEY_ID"
               
+              # Check GPG key details and email addresses
+              echo "🔍 Checking GPG key details for GitHub verification..."
+              GPG_KEY_EMAILS=$(gpg --list-keys --with-colons "$IMPORTED_KEY_ID" | grep "^uid" | cut -d: -f10)
+              echo "📧 GPG Key User IDs:"
+              echo "$GPG_KEY_EMAILS"
+              
+              COMMIT_EMAIL="opensource-committer@broadsage.com"
+              echo "📧 Commit author email: $COMMIT_EMAIL"
+              
+              # Check if the commit email matches any of the GPG key emails
+              if echo "$GPG_KEY_EMAILS" | grep -q "$COMMIT_EMAIL"; then
+                echo "✅ GPG key contains matching email for commit author"
+              else
+                echo "⚠️  WARNING: GPG key does not contain the commit author email!"
+                echo "   This will cause GitHub to show commits as 'Unverified'"
+                echo "   Solutions:"
+                echo "   1. Add the email '$COMMIT_EMAIL' to your GPG key:"
+                echo "      gpg --edit-key $IMPORTED_KEY_ID"
+                echo "      > adduid"
+                echo "      > [enter name and email: opensource-committer@broadsage.com]"
+                echo "   2. Or use your personal email that's in the GPG key for commits"
+                echo ""
+                echo "   Current GPG key emails:"
+                echo "$GPG_KEY_EMAILS" | sed 's/^/      /'
+              fi
+              
               # Skip trust setting to avoid trust database issues
               # GPG signing will work without explicit trust for own keys
               echo "Skipping trust configuration (not required for signing)"
@@ -126,17 +152,39 @@ jobs:
                 echo "GPG_PASSPHRASE=${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" >> "$GITHUB_ENV"
               fi
               
-              # Test GPG signing capability
-              echo "Testing GPG signing..."
+              # Test GPG signing capability with commit verification
+              echo "🧪 Testing GPG signing and commit verification..."
               export GPG_TTY=/dev/null
+              
+              # Create a test commit to verify signing works properly
+              TEST_FILE=$(mktemp)
+              echo "test content" > "$TEST_FILE"
+              
               if [ -n "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" ]; then
                 echo "test" | gpg --batch --yes --pinentry-mode loopback --no-tty \
                   --passphrase "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" \
-                  --armor --sign --default-key "$IMPORTED_KEY_ID" >/dev/null 2>&1 && \
-                  echo "✅ GPG signing test successful" || echo "⚠️ GPG signing test failed"
+                  --armor --sign --default-key "$IMPORTED_KEY_ID" >/dev/null 2>&1
+                SIGN_TEST_RESULT=$?
               else
-                echo "test" | gpg --batch --yes --no-tty --armor --sign --default-key "$IMPORTED_KEY_ID" >/dev/null 2>&1 && \
-                  echo "✅ GPG signing test successful" || echo "⚠️ GPG signing test failed"
+                echo "test" | gpg --batch --yes --no-tty --armor --sign --default-key "$IMPORTED_KEY_ID" >/dev/null 2>&1
+                SIGN_TEST_RESULT=$?
+              fi
+              
+              if [ $SIGN_TEST_RESULT -eq 0 ]; then
+                echo "✅ GPG signing test successful"
+                
+                # Show the public key that should be uploaded to GitHub
+                echo "📋 Public key fingerprint for GitHub verification:"
+                gpg --list-keys --with-fingerprint "$IMPORTED_KEY_ID" | grep -A1 "pub\|fpr"
+                
+                echo ""
+                echo "🔑 If commits still show as 'Unverified' on GitHub:"
+                echo "   1. Ensure this EXACT public key is uploaded to your GitHub account"
+                echo "   2. The key must include the email: opensource-committer@broadsage.com"
+                echo "   3. GitHub Settings → SSH and GPG keys → New GPG key"
+                echo "   4. Wait a few minutes for GitHub to process the key"
+              else
+                echo "❌ GPG signing test failed"
               fi
               
               echo "✅ GPG signing configured successfully"
