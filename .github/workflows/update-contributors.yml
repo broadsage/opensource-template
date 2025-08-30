@@ -12,15 +12,18 @@ on:
     - cron: "0 0 * * 0" # Weekly on Sundays at midnight UTC
   workflow_dispatch:
 
-# Minimal permissions - GitHub token only gets read access
-permissions: read-all
+# Enhanced permissions for personal token operations
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   update-contributors:
     runs-on: ubuntu-latest
-    # Explicit minimal permissions for this job
+    # Enhanced permissions for this job to support personal token operations
     permissions:
-      contents: read # Only read for checkout, writes happen via personal token
+      contents: write # Required for creating commits and branches
+      pull-requests: write # Required for creating pull requests
 
     steps:
       - name: Checkout repository
