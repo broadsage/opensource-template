@@ -4,6 +4,9 @@
 
 name: Update Contributors Statistics
 
+# This workflow uses crazy-max/ghaction-import-gpg for secure GPG key handling
+# and automatic commit signing following GitHub Actions best practices
+
 on:
   push:
     branches:
@@ -40,174 +43,22 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Import GPG key
+        id: import-gpg
+        uses: crazy-max/ghaction-import-gpg@v6.3.0
         with:
-          python-version: "3.x"
+          gpg_private_key: ${{ secrets.DEVEX_GITHUB_GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          git_config_global: false
+          trust_level: 5
 
       - name: Configure Git
         run: |
           git config --local user.email "opensource-committer@broadsage.com"
           git config --local user.name "opensource-committer"
-
-          # Configure GPG signing if GPG key is available
-          if [ -n "${{ secrets.DEVEX_GITHUB_GPG_PRIVATE_KEY }}" ]; then
-            echo "🔐 Setting up GPG signing for opensource-committer..."
-            
-            # Kill any existing GPG agent to start fresh
-            gpgconf --kill gpg-agent 2>/dev/null || true
-            
-            # Set up GPG directory with proper permissions
-            mkdir -p ~/.gnupg
-            chmod 700 ~/.gnupg
-            
-            # Create simplified GPG configuration
-            cat > ~/.gnupg/gpg.conf << 'GPGCONF'
-          use-agent
-          pinentry-mode loopback
-          batch
-          yes
-          trust-model always
-          no-tty
-          quiet
-          GPGCONF
-            
-            cat > ~/.gnupg/gpg-agent.conf << 'AGENTCONF'
-          allow-loopback-pinentry
-          default-cache-ttl 7200
-          max-cache-ttl 7200
-          pinentry-program /usr/bin/pinentry-curses
-          no-grab
-          AGENTCONF
-            
-            chmod 600 ~/.gnupg/gpg.conf ~/.gnupg/gpg-agent.conf
-            
-            # Start GPG agent and initialize trust database
-            gpg-agent --daemon --batch 2>/dev/null || true
-            
-            # Initialize the trust database properly
-            echo "Initializing GPG trust database..."
-            gpg --update-trustdb 2>/dev/null || gpg --check-trustdb 2>/dev/null || true
-            
-            # Import GPG key with better error handling
-            echo "Importing GPG private key..."
-            if [ -n "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" ]; then
-              echo "${{ secrets.DEVEX_GITHUB_GPG_PRIVATE_KEY }}" | base64 -d | \
-                gpg --batch --yes --pinentry-mode loopback \
-                    --passphrase "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" \
-                    --import
-            else
-              echo "${{ secrets.DEVEX_GITHUB_GPG_PRIVATE_KEY }}" | base64 -d | \
-                gpg --batch --yes --import
-            fi
-            
-            # Wait a moment for import to complete
-            sleep 2
-            
-            # Get the actual key ID from the imported key
-            IMPORTED_KEY_ID=$(gpg --list-secret-keys --with-colons | grep "^sec" | head -1 | cut -d: -f5)
-            
-            if [ -n "$IMPORTED_KEY_ID" ]; then
-              echo "✅ Successfully imported GPG key: $IMPORTED_KEY_ID"
-              
-              # Check GPG key details and email addresses
-              echo "🔍 Checking GPG key details for GitHub verification..."
-              GPG_KEY_EMAILS=$(gpg --list-keys --with-colons "$IMPORTED_KEY_ID" | grep "^uid" | cut -d: -f10)
-              echo "📧 GPG Key User IDs:"
-              echo "$GPG_KEY_EMAILS"
-              
-              COMMIT_EMAIL="opensource-committer@broadsage.com"
-              echo "📧 Commit author email: $COMMIT_EMAIL"
-              
-              # Check if the commit email matches any of the GPG key emails
-              if echo "$GPG_KEY_EMAILS" | grep -q "$COMMIT_EMAIL"; then
-                echo "✅ GPG key contains matching email for commit author"
-              else
-                echo "⚠️  WARNING: GPG key does not contain the commit author email!"
-                echo "   This will cause GitHub to show commits as 'Unverified'"
-                echo "   Solutions:"
-                echo "   1. Add the email '$COMMIT_EMAIL' to your GPG key:"
-                echo "      gpg --edit-key $IMPORTED_KEY_ID"
-                echo "      > adduid"
-                echo "      > [enter name and email: opensource-committer@broadsage.com]"
-                echo "   2. Or use your personal email that's in the GPG key for commits"
-                echo ""
-                echo "   Current GPG key emails:"
-                echo "$GPG_KEY_EMAILS" | while IFS= read -r line; do echo "      $line"; done
-              fi
-              
-              # Skip trust setting to avoid trust database issues
-              # GPG signing will work without explicit trust for own keys
-              echo "Skipping trust configuration (not required for signing)"
-              
-              # Configure Git to use the imported key
-              git config --local user.signingkey "$IMPORTED_KEY_ID"
-              git config --local commit.gpgsign true
-              git config --local gpg.program gpg
-              
-              # Set environment variables for later steps
-              echo "GPG_KEY_ID=$IMPORTED_KEY_ID" >> "$GITHUB_ENV"
-              echo "GPG_TTY=/dev/null" >> "$GITHUB_ENV"
-              
-              if [ -n "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" ]; then
-                echo "GPG_PASSPHRASE=${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" >> "$GITHUB_ENV"
-              fi
-              
-              # Test GPG signing capability with commit verification
-              echo "🧪 Testing GPG signing and commit verification..."
-              export GPG_TTY=/dev/null
-              
-              # Create a test commit to verify signing works properly
-              TEST_FILE=$(mktemp)
-              echo "test content" > "$TEST_FILE"
-              
-              if [ -n "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" ]; then
-                echo "test" | gpg --batch --yes --pinentry-mode loopback --no-tty \
-                  --passphrase "${{ secrets.DEVEX_GITHUB_GPG_PASSPHRASE }}" \
-                  --armor --sign --default-key "$IMPORTED_KEY_ID" >/dev/null 2>&1
-                SIGN_TEST_RESULT=$?
-              else
-                echo "test" | gpg --batch --yes --no-tty --armor --sign --default-key "$IMPORTED_KEY_ID" >/dev/null 2>&1
-                SIGN_TEST_RESULT=$?
-              fi
-              
-              if [ $SIGN_TEST_RESULT -eq 0 ]; then
-                echo "✅ GPG signing test successful"
-                
-                # Show the public key that should be uploaded to GitHub
-                echo "📋 Public key fingerprint for GitHub verification:"
-                gpg --list-keys --with-fingerprint "$IMPORTED_KEY_ID" | grep -A1 "pub\|fpr"
-                
-                echo ""
-                echo "🔑 PUBLIC KEY TO UPLOAD TO GITHUB:"
-                echo "   Copy the following public key block and paste it into GitHub:"
-                echo "   GitHub.com → Settings → SSH and GPG keys → New GPG key"
-                echo ""
-                echo "BEGIN PUBLIC KEY BLOCK:"
-                echo "========================"
-                gpg --armor --export "$IMPORTED_KEY_ID"
-                echo "========================"
-                echo "END PUBLIC KEY BLOCK"
-                echo ""
-                echo "🔑 If commits still show as 'Unverified' on GitHub:"
-                echo "   1. Ensure this EXACT public key is uploaded to your GitHub account"
-                echo "   2. The key must include the email: opensource-committer@broadsage.com"
-                echo "   3. GitHub Settings → SSH and GPG keys → New GPG key"
-                echo "   4. Wait a few minutes for GitHub to process the key"
-              else
-                echo "❌ GPG signing test failed"
-              fi
-              
-              echo "✅ GPG signing configured successfully"
-            else
-              echo "❌ Failed to import GPG key - will proceed without signing"
-              git config --local commit.gpgsign false
-            fi
-          else
-            echo "No GPG key provided - commits will not be GPG signed"
-            git config --local commit.gpgsign false
-          fi
-
+          echo "✅ Git configuration completed"
           echo "Using opensource-committer authentication for enhanced permissions"
 
       - name: Update contributor statistics
@@ -234,16 +85,8 @@ jobs:
 
       - name: Commit changes
         if: steps.verify-changed-files.outputs.changed == 'true'
-        env:
-          GPG_TTY: /dev/null
-          GPG_PASSPHRASE: ${{ env.GPG_PASSPHRASE }}
-          GNUPGHOME: ~/.gnupg
         run: |
-          echo "📝 Creating commit..."
-
-          # Set up GPG environment for GitHub Actions
-          export GPG_TTY=/dev/null
-          export GNUPGHOME=~/.gnupg
+          echo "📝 Creating GPG-signed commit..."
 
           # Add changed files
           git add CONTRIBUTORS.md
@@ -259,42 +102,14 @@ jobs:
 
           Signed-off-by: opensource-committer <opensource-committer@broadsage.com>"
 
-          # Create commit (GPG signing already configured in previous step)
-          if [ "$(git config --local commit.gpgsign)" = "true" ]; then
-            echo "🔐 Creating GPG-signed commit..."
-            
-            # Ensure GPG agent is running and configured for batch mode
-            gpg-agent --daemon --batch 2>/dev/null || true
-            
-            # For password-protected keys, use passphrase in environment
-            if [ -n "$GPG_PASSPHRASE" ]; then
-              echo "Using passphrase-protected GPG key..."
-              
-              # Set environment for non-interactive signing
-              export PINENTRY_USER_DATA="USE_CURSES=0"
-              export GPG_PASSPHRASE
-              
-              # Create the commit with GPG signing using passphrase
-              echo "$GPG_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --sign /dev/null >/dev/null 2>&1 || true
-              git commit -m "$COMMIT_MSG" --signoff
-            else
-              echo "Using non-passphrase-protected GPG key..."
-              # No passphrase needed
-              git commit -m "$COMMIT_MSG" --signoff
-            fi
-            
-            echo "✅ GPG-signed commit created successfully"
-          else
-            echo "📝 Creating unsigned commit..."
-            git commit -m "$COMMIT_MSG" --signoff
-            
-            echo "✅ Unsigned commit created successfully"
-          fi
+          # Create GPG-signed commit (signing is automatically configured by ghaction-import-gpg)
+          git commit -m "$COMMIT_MSG" --signoff
 
           # Show commit details
           echo "📋 Commit details:"
           git log --pretty=format:"%h %s %G?" -1
           echo ""
+          echo "✅ GPG-signed commit created successfully"
 
       - name: Create Pull Request
         if: steps.verify-changed-files.outputs.changed == 'true'
@@ -330,7 +145,7 @@ jobs:
             ### ✅ Compliance:
             - **DCO Signed-off:** Yes (automated)
             - **Commit Author:** opensource-committer
-            - **GPG Signed:** Yes (verified commits with personal GPG key)
+            - **GPG Signed:** Yes (verified commits using crazy-max/ghaction-import-gpg)
             - **Authentication:** opensource-committer GitHub token
             - **Security:** Enhanced permissions with preserved verification
 
