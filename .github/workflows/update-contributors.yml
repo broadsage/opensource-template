@@ -102,8 +102,8 @@ jobs:
 
           Signed-off-by: opensource-committer <opensource-committer@broadsage.com>"
 
-          # Create GPG-signed commit (signing is automatically configured by ghaction-import-gpg)
-          git commit -m "$COMMIT_MSG" --signoff
+          # Create GPG-signed commit with explicit signing and DCO signoff
+          git commit -S -m "$COMMIT_MSG" --signoff
 
           # Show commit details
           echo "📋 Commit details:"
