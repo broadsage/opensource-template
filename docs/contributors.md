@@ -116,7 +116,7 @@ Contributors who bring groundbreaking ideas or solutions.
 
 ## 🎊 Monthly Highlights
 
-### ### ### August 2025
+### ### ### ### August 2025
 
 📊 **This Month Statistics:**
 
@@ -131,6 +131,7 @@ Contributors who bring groundbreaking ideas or solutions.
 - 📅 Project Started: %Y
 
 🏆 **Top Contributors:**
+
 
 ## 📋 How to Get Recognized
 
