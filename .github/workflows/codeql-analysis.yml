@@ -74,7 +74,7 @@ jobs:
 
       # Initialize CodeQL
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@db69a5182d331d562e511302ae3c9aafd5fada6c # v3.26.6
+        uses: github/codeql-action/init@02ab253bd299d261d00cdf8a9bca38fea2697d50 # v3.26.6
         with:
           languages: ${{ matrix.language }}
 
@@ -121,7 +121,7 @@ jobs:
 
       # Perform CodeQL Analysis
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@db69a5182d331d562e511302ae3c9aafd5fada6c # v3.26.6
+        uses: github/codeql-action/analyze@02ab253bd299d261d00cdf8a9bca38fea2697d50 # v3.26.6
         with:
           category: "/language:${{ matrix.language }}"
           # Upload results even if there are findings
